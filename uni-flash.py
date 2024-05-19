@@ -74,12 +74,12 @@ HIDDEN_CHAR = tuple([i for i in range(0x8)] +
     [i for i in range(0xE0100, 0xE01F0)]
 )
 
-with open(os.path.join(CUR_FOLDER, "Blocks.csv")) as blocks_csv:
+with open(os.path.join(CUR_FOLDER, "Blocks.csv"), encoding="utf-8") as blocks_csv:
     reader = csv.reader(blocks_csv, delimiter='|')
     BLOCKS = {tuple(map(lambda rang: int(rang, 16), line[0].split(".."))): (line[2], "-".join(map(lambda rang: "U+" + rang, line[0].split(".."))), line[-1]) for line in reader}.items()
 
-NAME_LIST = json.load(open(os.path.join(CUR_FOLDER, "NameList.json")))
-DEFINED_CHARACTER_LIST = json.load(open(os.path.join(CUR_FOLDER, "DefinedCharacterList.json")))
+NAME_LIST = json.load(open(os.path.join(CUR_FOLDER, "NameList.json"), encoding="utf8"))
+DEFINED_CHARACTER_LIST = json.load(open(os.path.join(CUR_FOLDER, "DefinedCharacterList.json"), encoding="utf8"))
 EXAMPLE_FONT_SIZE = 220
 
 font_path0 = os.path.join(CUR_FOLDER, "TH-Times.ttf")
@@ -350,7 +350,7 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
     mode = "RGB" if bc else "L"
     
     bgc = (20, 20, 20)
-    r = ("未定义", "未定义")
+    r = ("未定义", "未定义", "undefined")
     for index, item in enumerate(BLOCKS):
         if item[0][0] <= _code <= item[0][1]:
             r = item[1]
@@ -503,12 +503,12 @@ def generate_unicode_flash(out_path, codes, fps, _fonts, c_font, b_font, o_font,
     fonts = tuple(zip(map(lambda f: ImageFont.truetype(f, EXAMPLE_FONT_SIZE), _fonts), map(lambda f: TTFont(f)["cmap"].tables, _fonts)))
     a = []
     count = 0
-    # temp_dir = os.path.join(CUR_FOLDER, "res")
+    #temp_dir = os.path.join(CUR_FOLDER, "res")
     with tempfile.TemporaryDirectory() as temp_dir:
         print(f"gif dir: {temp_dir}")
         in_p = os.path.join(temp_dir, "input.txt")
         
-        with open(in_p, "w") as f:
+        with open(in_p, "w", encoding="utf8") as f:
             for code in tqdm(codes):
                 image = generate_a_image(1600, 900, code, c_font, b_font, o_font, r_font, h_font, n_font, fonts)
                 if bc:
