@@ -15,6 +15,7 @@ sh Preparations.sh
 ```bash
 python uni-flash.py -rang 0 20 15
 ```
+*十六进制不区分大小写*
 其表示生成从U+0000-U+0020的Unicode快闪（含首尾），帧率为15fps。
 ### 使用自定义字体
 ```bash
@@ -35,8 +36,9 @@ python uni-flash.py -from_file 1.txt 15
 其表示从1.txt文件中获取将要快闪的字符。
 如果1.txt文件的内容是
 ```text
-1,2,3,4,4e00,9fFe
+1,2,3,4,4e00,9FFE
 ```
+*十六进制不区分大小写。*
 则表示快闪U+1、U+2、U+3、U+4、U+4E00、U+9FFE六个字符。
 ### 通过自定义字体生成
 ```bash
