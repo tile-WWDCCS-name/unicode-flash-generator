@@ -6,10 +6,6 @@
 apt install git
 ```
 2. 克隆此仓库后切换到文件夹中。
-```bash
-git clone https://gitee.com/golllllll/unicode-flash-generator
-cd unicode-flash-generator
-```
 3. 执行`Preparations.sh`。
 ```bash
 sh Preparations.sh
