@@ -22,7 +22,7 @@ python uni-flash.py -rang 0 20 15
 ```bash
 python uni-flash.py -rang 0 20 15 -fonts a.ttf
 ```
-**只支持ttf格式的非彩色字体。**
+**只支持ttf或otf格式的非彩色字体。**
 
 其表示优先使用a.ttf字体，若a.ttf无法显示则使用默认字体。
 
@@ -49,8 +49,8 @@ python uni-flash.py -from_file 1.txt 15
 python uni-flash.py -from_font 15 -fonts a.ttf c.ttf b.ttf
 ```
 表示快闪的字符将是a.ttf、c.ttf、b.ttf中所有有字形的字符。
-### 更多参数
+### 更多帮助
 用`python uni-flash.py -h`查看更多帮助。
 
 ## 问题
-如果报出`AttributeError： 'NoneType' object has no attribute 'palette'`错误，请尝试加上`-no_dynamic`参数。
+如果抛出`AttributeError： 'NoneType' object has no attribute 'palette'`错误，请尝试加上`-no_dynamic`参数。
