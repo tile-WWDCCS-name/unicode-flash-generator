@@ -92,6 +92,7 @@ font_path6 = os.path.join(CUR_FOLDER, "PlangothicP2-Regular.ttf")
 font_path7 = os.path.join(CUR_FOLDER, "MonuHani-9.69.ttf")
 font_path8 = os.path.join(CUR_FOLDER, "CtrlCtrl-1.1.ttf")
 font_path9 = os.path.join(CUR_FOLDER, "MonuHanp-3.001.ttf")
+font_path10 = os.path.join(CUR_FOLDER, "MonuLast-8.16-1.ttf")
 
 block_name_font_path = os.path.join(CUR_FOLDER, "AlibabaPuHuiTi-3-55-Regular.ttf")
 range_font_path = os.path.join(CUR_FOLDER, "AlibabaPuHuiTi-3-55-Regular.ttf")
@@ -110,6 +111,7 @@ tfont5 = TTFont(font_path5)
 #tfont7 = TTFont(font_path7)
 #tfont8 = TTFont(font_path8)
 #tfont9 = TTFont(font_path9)
+#tfont10 = TTFont(font_path10)
 
 font_cmap0 = tfont0["cmap"].tables
 font_cmap1 = tfont1["cmap"].tables
@@ -121,6 +123,7 @@ font_cmap5 = tfont5["cmap"].tables
 #font_cmap7 = tfont7["cmap"].tables
 #font_cmap8 = tfont8["cmap"].tables
 #font_cmap9 = tfont9["cmap"].tables
+#font_cmap10 = tfont10["cmap"].tables
 
 font0 = ImageFont.truetype(font_path0, EXAMPLE_FONT_SIZE)
 font1 = ImageFont.truetype(font_path1, EXAMPLE_FONT_SIZE)
@@ -132,6 +135,7 @@ font6 = ImageFont.truetype(font_path6, EXAMPLE_FONT_SIZE)
 font7 = ImageFont.truetype(font_path7, EXAMPLE_FONT_SIZE)
 font8 = ImageFont.truetype(font_path8, EXAMPLE_FONT_SIZE)
 font9 = ImageFont.truetype(font_path9, EXAMPLE_FONT_SIZE)
+font10 = ImageFont.truetype(font_path10, EXAMPLE_FONT_SIZE)
 
 def merge_iterables(*iterables):
     result_list = []
@@ -338,8 +342,8 @@ def gap(s):
 
 
 bc = False
-def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font, fonts):
-    global font0, font1, font2, font3, font4, font5, font6, font7, font8, bgcs
+def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font, fonts, use_last, show_private):
+    global font0, font1, font2, font3, font4, font5, font6, font7, font8, font9, font10, bgcs
     text = chr(_code)
     
     utf8 = "UTF-8: " + gap(to_utf8_hex(_code))
@@ -474,6 +478,20 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
             x = w/2 - text_width/2
             y = h/2 - text_height/2
             draw.text((x, y), text, font=font, fill=textc)
+    elif show_private and font is not None and is_private_use(_code):
+        bbox = font.getbbox(text)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
+        x = w/2 - text_width/2
+        y = h/2 - text_height/2
+        draw.text((x, y), text, font=font, fill=textc)
+    elif use_last:
+        bbox = font10.getbbox(text)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
+        x = w/2 - text_width/2
+        y = h/2 - text_height/2
+        draw.text((x, y), text, font=font10, fill=textc)
     else:
         text = None
         if _code in NOT_CHAR:
@@ -499,7 +517,7 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
     return image
 
 
-def generate_unicode_flash(out_path, codes, fps, _fonts, c_font, b_font, o_font, r_font, h_font, n_font):
+def generate_unicode_flash(out_path, codes, fps, _fonts, c_font, b_font, o_font, r_font, h_font, n_font, use_last, no_dynamic, show_private, no_music):
     fonts = tuple(zip(map(lambda f: ImageFont.truetype(f, EXAMPLE_FONT_SIZE), _fonts), map(lambda f: TTFont(f)["cmap"].tables, _fonts)))
     a = []
     count = 0
@@ -510,8 +528,8 @@ def generate_unicode_flash(out_path, codes, fps, _fonts, c_font, b_font, o_font,
         
         with open(in_p, "w", encoding="utf8") as f:
             for code in tqdm(codes):
-                image = generate_a_image(1600, 900, code, c_font, b_font, o_font, r_font, h_font, n_font, fonts)
-                if bc:
+                image = generate_a_image(1600, 900, code, c_font, b_font, o_font, r_font, h_font, n_font, fonts, use_last, show_private)
+                if bc or no_dynamic:
                     ires_path = os.path.join(temp_dir, f"{code}.gif")
                     image.save(ires_path)
                     f.write(f"file '{ires_path}'\n")
@@ -523,14 +541,17 @@ def generate_unicode_flash(out_path, codes, fps, _fonts, c_font, b_font, o_font,
                         a[0].save(ires_path, save_all=True, append_images=a[1:], optimize=False, duration=int(1000/fps), loop=0)
                         f.write(f"file '{ires_path}'\n")
                         a.clear()
-            if not bc and a:
+            if not bc and not no_dynamic and a:
                 count += 1
                 ires_path = os.path.join(temp_dir, f"{count}.gif")
                 a[0].save(ires_path, save_all=True, append_images=a[1:], optimize=False, duration=int(1000/fps), loop=0)
                 f.write(f"file '{ires_path}'\n")
                 a.clear()
-        os.system(f'ffmpeg -r {fps} -f concat -safe 0 -i {os.path.abspath(in_p)} -vf "fps={fps}" -pix_fmt yuv420p {os.path.join(temp_dir, "out.mp4")}')
-        os.system(f'ffmpeg -i {os.path.join(temp_dir, "out.mp4")} -stream_loop -1 -i {os.path.join(CUR_FOLDER, "UFM.mp3")} -vcodec copy -acodec copy -shortest {os.path.abspath(out_path)}')
+        if no_music:
+            os.system(f'ffmpeg -r {fps} -f concat -safe 0 -i {os.path.abspath(in_p)} -vf "fps={fps}" -pix_fmt yuv420p {os.path.abspath(out_path)}')
+        else:
+            os.system(f'ffmpeg -r {fps} -f concat -safe 0 -i {os.path.abspath(in_p)} -vf "fps={fps}" -pix_fmt yuv420p -c copy {os.path.join(temp_dir, "out.mp4")}')
+            os.system(f'ffmpeg -i {os.path.join(temp_dir, "out.mp4")} -stream_loop -1 -i {os.path.join(CUR_FOLDER, "UFM.mp3")} -c copy -shortest {os.path.abspath(out_path)}')
 
 
 if __name__ == "__main__":
@@ -559,7 +580,14 @@ if __name__ == "__main__":
                         help='字体路径列表，按输入顺序计算优先级')
     parser.add_argument('-out_path', type=str, default=os.path.join(CUR_FOLDER, "res.mp4"),
                         help="生成视频的路径")
-
+    parser.add_argument('-use_last', action='store_true',
+                        help="使用MonuLast(典迹末境)字体")
+    parser.add_argument('-no_dynamic', action='store_true',
+                        help='以静态图片模式保存临时图片')
+    parser.add_argument('-show_private', action='store_true',
+                        help='展示私用区字符')
+    parser.add_argument('-no_music', action='store_true',
+                        help='不添加音乐')
     args = parser.parse_args()
     if args.rang:
         if not (UNICODE_RE.search(args.rang[0]) and UNICODE_RE.search(args.rang[1])):
@@ -571,4 +599,4 @@ if __name__ == "__main__":
         codes = map(lambda v: int(v) if UNICODE_RE.search(v) else _ve(v), args.from_file.read().split(","))
     elif args.from_font:
         codes = sorted(list(set(merge_iterables(*[get_all_codes_from_font(font) for font in args.fonts]))))
-    generate_unicode_flash(args.out_path, codes, args.fps, args.fonts, c_font, b_font, o_font, r_font, h_font, n_font)
+    generate_unicode_flash(args.out_path, codes, args.fps, args.fonts, c_font, b_font, o_font, r_font, h_font, n_font, args.use_last, args.no_dynamic, args.show_private, args.no_music)
