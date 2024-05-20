@@ -44,9 +44,8 @@ CUR_FOLDER = os.path.split(__file__)[0]
 NOT_CHAR = [0xFFFE, 0xFFFF, 0x1FFFE, 0x1FFFF, 0x2FFFE, 0x2FFFF, 0x3FFFE, 0x3FFFF, 0x4FFFE, 0x4FFFF, 0x5FFFE, 0x5FFFF, 0x6FFFE, 0x6FFFF, 0x7FFFE, 0x7FFFF, 0x8FFFE, 0x8FFFF, 0x9FFFE, 0x9FFFF, 0xAFFFE, 0xAFFFF, 0xBFFFE, 0xBFFFF, 0xCFFFE, 0xCFFFF, 0xDFFFE, 0xDFFFF, 0xEFFFE, 0xEFFFF, 0xFFFFE, 0xFFFFF, 0x10FFFE, 0x10FFFF]
 NOT_CHAR.extend(range(0xFDD0, 0xFDF0))
 #CTRL_CHAR = (0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x7F, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x8D, 0x8E, 0x8F, 0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0x9A, 0x9B, 0x9C, 0x9D, 0x9E, 0x9F)
-HIDDEN_CHAR = tuple([i for i in range(0x8)] +
-    [0xA, 0xB, 0xC] +
-    [i for i in range(0xE, 0x21)] +
+HIDDEN_CHAR = tuple(
+    list(set([i for i in range(0x21)]) - {0xD})  +
     [i for i in range(0x7F, 0xA1)] +
     [0xAD, 0x34F, 0x61C, 0x890,
      0x891, 0x180B, 0x180C, 0x180D,
@@ -345,6 +344,10 @@ bc = False
 def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font, fonts, use_last, show_private):
     global font0, font1, font2, font3, font4, font5, font6, font7, font8, font9, font10, bgcs
     text = chr(_code)
+    if _code == 0x8:
+        text = "␈"
+    elif _code == 0x9:
+        text = "␉"
     
     utf8 = "UTF-8: " + gap(to_utf8_hex(_code))
     utf16le = "UTF-16LE: " + gap(to_utf16le_hex(_code))
@@ -471,7 +474,7 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
     draw.text((35, alias_height + comment_height + 15), version, font=n_font, fill=textc)
     
     if is_defined(_code) and (not is_private_use(_code)):
-        if font is not None:
+        if font is not None and _code != 0xD:
             bbox = font.getbbox(text)
             text_width = bbox[2] - bbox[0]
             text_height = bbox[3] - bbox[1]
@@ -521,37 +524,37 @@ def generate_unicode_flash(out_path, codes, fps, _fonts, c_font, b_font, o_font,
     fonts = tuple(zip(map(lambda f: ImageFont.truetype(f, EXAMPLE_FONT_SIZE), _fonts), map(lambda f: TTFont(f)["cmap"].tables, _fonts)))
     a = []
     count = 0
-    #temp_dir = os.path.join(CUR_FOLDER, "res")
-    with tempfile.TemporaryDirectory() as temp_dir:
-        print(f"gif dir: {temp_dir}")
-        in_p = os.path.join(temp_dir, "input.txt")
-        
-        with open(in_p, "w", encoding="utf8") as f:
-            for code in tqdm(codes):
-                image = generate_a_image(1600, 900, code, c_font, b_font, o_font, r_font, h_font, n_font, fonts, use_last, show_private)
-                if bc or no_dynamic:
-                    ires_path = os.path.join(temp_dir, f"{code}.gif")
-                    image.save(ires_path)
-                    f.write(f"file '{ires_path}'\n")
-                else:
-                    a.append(image)
-                    if len(a) % 300 == 0 and len(a) != 0:
-                        count += 1
-                        ires_path = os.path.join(temp_dir, f"{count}.gif")
-                        a[0].save(ires_path, save_all=True, append_images=a[1:], optimize=False, duration=int(1000/fps), loop=0)
-                        f.write(f"file '{ires_path}'\n")
-                        a.clear()
-            if not bc and not no_dynamic and a:
-                count += 1
-                ires_path = os.path.join(temp_dir, f"{count}.gif")
-                a[0].save(ires_path, save_all=True, append_images=a[1:], optimize=False, duration=int(1000/fps), loop=0)
+    temp_dir = os.path.join(CUR_FOLDER, "res")
+    #with tempfile.TemporaryDirectory() as temp_dir:
+    print(f"gif dir: {temp_dir}")
+    in_p = os.path.join(temp_dir, "input.txt")
+    
+    with open(in_p, "w", encoding="utf8") as f:
+        for code in tqdm(codes):
+            image = generate_a_image(1600, 900, code, c_font, b_font, o_font, r_font, h_font, n_font, fonts, use_last, show_private)
+            if bc or no_dynamic:
+                ires_path = os.path.join(temp_dir, f"{code}.gif")
+                image.save(ires_path)
                 f.write(f"file '{ires_path}'\n")
-                a.clear()
-        if no_music:
-            os.system(f'ffmpeg -r {fps} -f concat -safe 0 -i {os.path.abspath(in_p)} -vf "fps={fps}" -pix_fmt yuv420p {os.path.abspath(out_path)}')
-        else:
-            os.system(f'ffmpeg -r {fps} -f concat -safe 0 -i {os.path.abspath(in_p)} -vf "fps={fps}" -pix_fmt yuv420p -c copy {os.path.join(temp_dir, "out.mp4")}')
-            os.system(f'ffmpeg -i {os.path.join(temp_dir, "out.mp4")} -stream_loop -1 -i {os.path.join(CUR_FOLDER, "UFM.mp3")} -c copy -shortest {os.path.abspath(out_path)}')
+            else:
+                a.append(image)
+                if len(a) % 300 == 0 and len(a) != 0:
+                    count += 1
+                    ires_path = os.path.join(temp_dir, f"{count}.gif")
+                    a[0].save(ires_path, save_all=True, append_images=a[1:], optimize=False, duration=int(1000/fps), loop=0)
+                    f.write(f"file '{ires_path}'\n")
+                    a.clear()
+        if not bc and not no_dynamic and a:
+            count += 1
+            ires_path = os.path.join(temp_dir, f"{count}.gif")
+            a[0].save(ires_path, save_all=True, append_images=a[1:], optimize=False, duration=int(1000/fps), loop=0)
+            f.write(f"file '{ires_path}'\n")
+            a.clear()
+    if no_music:
+        os.system(f'ffmpeg -f concat -safe 0 -i {os.path.abspath(in_p)} -pix_fmt yuv420p {os.path.abspath(out_path)}')
+    else:
+        os.system(f'ffmpeg -f concat -safe 0 -i {os.path.abspath(in_p)} -pix_fmt yuv420p {os.path.join(temp_dir, "out.mp4")}')
+        os.system(f'ffmpeg -i {os.path.join(temp_dir, "out.mp4")} -stream_loop -1 -i {os.path.join(CUR_FOLDER, "UFM.mp3")} -c copy -shortest {os.path.abspath(out_path)}')
 
 
 if __name__ == "__main__":
