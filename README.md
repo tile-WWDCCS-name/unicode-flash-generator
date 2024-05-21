@@ -22,7 +22,7 @@ python uni-flash.py -rang 0 20 15
 ```bash
 python uni-flash.py -rang 0 20 15 -fonts a.ttf
 ```
-**只支持ttf或otf格式的非彩色字体。**
+**只支持ttf或otf格式的非位图字体。**
 
 其表示优先使用a.ttf字体，若a.ttf无法显示则使用默认字体。
 
@@ -53,4 +53,10 @@ python uni-flash.py -from_font 15 -fonts a.ttf c.ttf b.ttf
 用`python uni-flash.py -h`查看更多帮助。
 
 ## 问题
-如果抛出`AttributeError： 'NoneType' object has no attribute 'palette'`错误，请尝试加上`-no_dynamic`参数。
+### AttributeError
+如抛出`AttributeError： 'NoneType' object has no attribute 'palette'`错误，请尝试加上`-no_dynamic`参数。
+### OSError
+如抛出`OSError: raster overflow`错误，请尝试以下方式：
+- 使用内存更大的设备。
+- 分段生成。
+- 使用更低的分辩率。
