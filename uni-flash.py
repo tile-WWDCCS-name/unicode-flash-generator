@@ -78,7 +78,7 @@ with open(os.path.join(CUR_FOLDER, "Blocks.csv"), encoding="utf-8") as blocks_cs
     BLOCKS = {tuple(map(lambda rang: int(rang, 16), line[0].split(".."))): (line[2], "-".join(map(lambda rang: "U+" + rang, line[0].split(".."))), line[-1]) for line in reader}.items()
 
 NAME_LIST = json.load(open(os.path.join(CUR_FOLDER, "NameList.json"), encoding="utf8"))
-DEFINED_CHARACTER_LIST = json.load(open(os.path.join(CUR_FOLDER, "DefinedCharacterList.json"), encoding="utf8"))
+DEFINED_CHARACTER_LIST = set(json.load(open(os.path.join(CUR_FOLDER, "DefinedCharacterList.json"), encoding="utf8")))
 EXAMPLE_FONT_SIZE = 220
 
 font_path0 = os.path.join(CUR_FOLDER, "TH-Times.ttf")
@@ -341,7 +341,16 @@ def gap(s):
 
 
 bc = False
-def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font, fonts, use_last, show_private):
+def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font, fonts, use_last, show_private, skip_no_glyph, skip_undefined):
+    if skip_undefined and not is_defined(_code):
+        return "skip"
+    font = None
+    for _font, font_cmap in fonts:
+        if check_glyph_in_font(font_cmap, _code):
+            font = _font
+            break
+    if skip_no_glyph and font is None:
+        return "skip"
     global font0, font1, font2, font3, font4, font5, font6, font7, font8, font9, font10, bgcs
     text = chr(_code)
     if _code == 0x8:
@@ -353,7 +362,6 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
     utf16le = "UTF-16LE: " + gap(to_utf16le_hex(_code))
     utf16be = "UTF-16BE: " + gap(to_utf16be_hex(_code))
     
-    font = None
     mode = "RGB" if bc else "L"
     
     bgc = (20, 20, 20)
@@ -367,11 +375,6 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
     if not bc:
         bgc = 20
         textc = 235
-
-    for _font, font_cmap in fonts:
-        if check_glyph_in_font(font_cmap, _code):
-            font = _font
-            break
     
     if font is not None:
         ...
@@ -520,7 +523,7 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
     return image
 
 
-def generate_unicode_flash(out_path, codes, fps, _fonts, c_font, b_font, o_font, r_font, h_font, n_font, use_last, no_dynamic, show_private, no_music):
+def generate_unicode_flash(out_path, codes, fps, _fonts, c_font, b_font, o_font, r_font, h_font, n_font, use_last, no_dynamic, show_private, no_music, skip_no_glyph, skip_undefined):
     fonts = tuple(zip(map(lambda f: ImageFont.truetype(f, EXAMPLE_FONT_SIZE), _fonts), map(lambda f: TTFont(f)["cmap"].tables, _fonts)))
     a = []
     count = 0
@@ -531,9 +534,11 @@ def generate_unicode_flash(out_path, codes, fps, _fonts, c_font, b_font, o_font,
     
     with open(in_p, "w", encoding="utf8") as f:
         for code in tqdm(codes):
-            image = generate_a_image(1600, 900, code, c_font, b_font, o_font, r_font, h_font, n_font, fonts, use_last, show_private)
+            image = generate_a_image(1600, 900, code, c_font, b_font, o_font, r_font, h_font, n_font, fonts, use_last, show_private, skip_no_glyph, skip_undefined)
+            if image == "skip":
+                continue
             if bc or no_dynamic:
-                ires_path = os.path.join(temp_dir, f"{code}.gif")
+                ires_path = os.path.join(temp_dir, f"{code}.bmp")
                 image.save(ires_path)
                 f.write(f"file '{ires_path}'\n")
             else:
@@ -550,11 +555,13 @@ def generate_unicode_flash(out_path, codes, fps, _fonts, c_font, b_font, o_font,
             a[0].save(ires_path, save_all=True, append_images=a[1:], optimize=False, duration=int(1000/fps), loop=0)
             f.write(f"file '{ires_path}'\n")
             a.clear()
+    if not open(in_p, encoding="utf8").read():
+        raise ValueError('你这个傻逼，图片全都跳过了，我日你仙人！')
     if no_music:
-        os.system(f'ffmpeg -f concat -safe 0 -i {os.path.abspath(in_p)} -pix_fmt yuv420p {os.path.abspath(out_path)}')
+        os.system(f'ffmpeg -r {fps} -f concat -safe 0 -i {os.path.abspath(in_p)} -pix_fmt yuv420p {os.path.abspath(out_path)} -hide_banner')
     else:
-        os.system(f'ffmpeg -f concat -safe 0 -i {os.path.abspath(in_p)} -pix_fmt yuv420p {os.path.join(temp_dir, "out.mp4")}')
-        os.system(f'ffmpeg -i {os.path.join(temp_dir, "out.mp4")} -stream_loop -1 -i {os.path.join(CUR_FOLDER, "UFM.mp3")} -c copy -shortest {os.path.abspath(out_path)}')
+        os.system(f'ffmpeg -r {fps} -f concat -safe 0 -i {os.path.abspath(in_p)} -pix_fmt yuv420p {os.path.join(temp_dir, "out.mp4")} -hide_banner')
+        os.system(f'ffmpeg -i {os.path.join(temp_dir, "out.mp4")} -stream_loop -1 -i {os.path.join(CUR_FOLDER, "UFM.mp3")} -c copy -shortest {os.path.abspath(out_path)} -hide_banner')
 
 
 if __name__ == "__main__":
@@ -591,6 +598,10 @@ if __name__ == "__main__":
                         help='展示私用区字符')
     parser.add_argument('-no_music', action='store_true',
                         help='不添加音乐')
+    parser.add_argument('-skip_no_glyph', action='store_true',
+                        help='跳过在所有自定义字体中都没有字形的字符')
+    parser.add_argument('-skip_undefined', action='store_true',
+                        help='跳过未定义字符、非字符、代理字符等')
     args = parser.parse_args()
     if args.rang:
         if not (UNICODE_RE.search(args.rang[0]) and UNICODE_RE.search(args.rang[1])):
@@ -602,4 +613,4 @@ if __name__ == "__main__":
         codes = map(lambda v: int(v) if UNICODE_RE.search(v) else _ve(v), args.from_file.read().split(","))
     elif args.from_font:
         codes = sorted(list(set(merge_iterables(*[get_all_codes_from_font(font) for font in args.fonts]))))
-    generate_unicode_flash(args.out_path, codes, args.fps, args.fonts, c_font, b_font, o_font, r_font, h_font, n_font, args.use_last, args.no_dynamic, args.show_private, args.no_music)
+    generate_unicode_flash(args.out_path, codes, args.fps, args.fonts, c_font, b_font, o_font, r_font, h_font, n_font, args.use_last, args.no_dynamic, args.show_private, args.no_music, args.skip_no_glyph, args.skip_undefined)
