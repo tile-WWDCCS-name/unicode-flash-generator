@@ -523,22 +523,27 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
     return image
 
 
-def generate_unicode_flash(out_path, codes, fps, _fonts, c_font, b_font, o_font, r_font, h_font, n_font, use_last, no_dynamic, show_private, no_music, skip_no_glyph, skip_undefined):
+def generate_unicode_flash(width, height, out_path, codes, fps, _fonts, c_font, b_font, o_font, r_font, h_font, n_font, use_last, no_dynamic, show_private, no_music, skip_no_glyph, skip_undefined, save_bmp):
     fonts = tuple(zip(map(lambda f: ImageFont.truetype(f, EXAMPLE_FONT_SIZE), _fonts), map(lambda f: TTFont(f)["cmap"].tables, _fonts)))
     a = []
     count = 0
     temp_dir = os.path.join(CUR_FOLDER, "res")
+    if not os.path.exists(temp_dir):
+        os.makedirs(temp_dir)
     #with tempfile.TemporaryDirectory() as temp_dir:
     print(f"gif dir: {temp_dir}")
     in_p = os.path.join(temp_dir, "input.txt")
     
     with open(in_p, "w", encoding="utf8") as f:
         for code in tqdm(codes):
-            image = generate_a_image(1600, 900, code, c_font, b_font, o_font, r_font, h_font, n_font, fonts, use_last, show_private, skip_no_glyph, skip_undefined)
+            image = generate_a_image(width, height, code, c_font, b_font, o_font, r_font, h_font, n_font, fonts, use_last, show_private, skip_no_glyph, skip_undefined)
             if image == "skip":
                 continue
             if bc or no_dynamic:
-                ires_path = os.path.join(temp_dir, f"{code}.bmp")
+                if save_bmp:
+                    ires_path = os.path.join(temp_dir, f"{code}.bmp")
+                else:
+                    ires_path = os.path.join(temp_dir, f"{code}.gif")
                 image.save(ires_path)
                 f.write(f"file '{ires_path}'\n")
             else:
@@ -577,15 +582,12 @@ if __name__ == "__main__":
     n_font = ImageFont.truetype(name_font_path, 30)
     
     parser = argparse.ArgumentParser(description="这是一个Unicode快闪生成脚本")
-    chars_group = parser.add_mutually_exclusive_group(required=True)
-    chars_group.add_argument('-rang', type=str, nargs=2,
-                            help='快闪字符的范围，不带0x的十六进制数')
-    chars_group.add_argument('-from_file', type=argparse.FileType('r'),
-                            help='通过一个文件获取将要快闪的字符')
-    chars_group.add_argument('-from_font', action='store_true',
-                            help='从字体文件列表获取将要快闪的字符')
     parser.add_argument('fps', type=float,
-                        help='帧率，建议15')
+                        help='帧率，建议15，可以为小数')
+    parser.add_argument('-width', type=int, default=1920,
+                        help='视频宽度，默认1920')
+    parser.add_argument('-height', type=int, default=1080,
+                        help='视频宽度，默认1080')
     parser.add_argument('-fonts', type=str, nargs="*", default=[],
                         help='字体路径列表，按输入顺序计算优先级')
     parser.add_argument('-out_path', type=str, default=os.path.join(CUR_FOLDER, "res.mp4"),
@@ -602,6 +604,15 @@ if __name__ == "__main__":
                         help='跳过在所有自定义字体中都没有字形的字符')
     parser.add_argument('-skip_undefined', action='store_true',
                         help='跳过未定义字符、非字符、代理字符等')
+    parser.add_argument('-save_bmp', action='store_true',
+                        help='存为bmp格式，仅在-no_dynamic启用时生效，能大幅增加生成速度，但有更大概率抛出OSError: raster overflow错误。')
+    chars_group = parser.add_mutually_exclusive_group(required=True)
+    chars_group.add_argument('-rang', type=str, nargs=2,
+                            help='快闪字符的范围，不带0x的十六进制数')
+    chars_group.add_argument('-from_file', type=argparse.FileType('r'),
+                            help='通过一个文件获取将要快闪的字符')
+    chars_group.add_argument('-from_font', action='store_true',
+                            help='从字体文件列表获取将要快闪的字符')
     args = parser.parse_args()
     if args.rang:
         if not (UNICODE_RE.search(args.rang[0]) and UNICODE_RE.search(args.rang[1])):
@@ -613,4 +624,4 @@ if __name__ == "__main__":
         codes = map(lambda v: int(v) if UNICODE_RE.search(v) else _ve(v), args.from_file.read().split(","))
     elif args.from_font:
         codes = sorted(list(set(merge_iterables(*[get_all_codes_from_font(font) for font in args.fonts]))))
-    generate_unicode_flash(args.out_path, codes, args.fps, args.fonts, c_font, b_font, o_font, r_font, h_font, n_font, args.use_last, args.no_dynamic, args.show_private, args.no_music, args.skip_no_glyph, args.skip_undefined)
+    generate_unicode_flash(args.width, args.height, args.out_path, codes, args.fps, args.fonts, c_font, b_font, o_font, r_font, h_font, n_font, args.use_last, args.no_dynamic, args.show_private, args.no_music, args.skip_no_glyph, args.skip_undefined, args.save_bmp)
