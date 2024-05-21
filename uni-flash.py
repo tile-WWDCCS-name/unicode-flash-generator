@@ -81,17 +81,15 @@ NAME_LIST = json.load(open(os.path.join(CUR_FOLDER, "NameList.json"), encoding="
 DEFINED_CHARACTER_LIST = set(json.load(open(os.path.join(CUR_FOLDER, "DefinedCharacterList.json"), encoding="utf8")))
 EXAMPLE_FONT_SIZE = 220
 
-font_path0 = os.path.join(CUR_FOLDER, "TH-Times.ttf")
-font_path1 = os.path.join(CUR_FOLDER, "Hancom.ttf")
-font_path2 = os.path.join(CUR_FOLDER, "TH-Disp-P0.ttf")
-font_path3 = os.path.join(CUR_FOLDER, "TH-Disp-P2.ttf")
-font_path4 = os.path.join(CUR_FOLDER, "TH-Disp-P3.ttf")
-font_path5 = os.path.join(CUR_FOLDER, "PlangothicP1-Regular(allideo).ttf")
-font_path6 = os.path.join(CUR_FOLDER, "PlangothicP2-Regular.ttf")
-font_path7 = os.path.join(CUR_FOLDER, "MonuHani-9.69.ttf")
-font_path8 = os.path.join(CUR_FOLDER, "CtrlCtrl-1.1.ttf")
-font_path9 = os.path.join(CUR_FOLDER, "MonuHanp-3.001.ttf")
-font_path10 = os.path.join(CUR_FOLDER, "MonuLast-8.16-1.ttf")
+font_path_times = os.path.join(CUR_FOLDER, "TH-Times.ttf")
+font_path_com = os.path.join(CUR_FOLDER, "Hancom.ttf")
+font_path_d0 = os.path.join(CUR_FOLDER, "TH-Disp-P0.ttf")
+font_path_p1 = os.path.join(CUR_FOLDER, "PlangothicP1-Regular(allideo).ttf")
+font_path_p2 = os.path.join(CUR_FOLDER, "PlangothicP2-Regular.ttf")
+font_path_mh = os.path.join(CUR_FOLDER, "MonuHani-9.69.ttf")
+font_path_ctrl = os.path.join(CUR_FOLDER, "CtrlCtrl-1.1.ttf")
+font_path_mht = os.path.join(CUR_FOLDER, "MonuHanp-3.001.ttf")
+font_path_last = os.path.join(CUR_FOLDER, "MonuLast-8.16-1.ttf")
 
 block_name_font_path = os.path.join(CUR_FOLDER, "AlibabaPuHuiTi-3-55-Regular.ttf")
 range_font_path = os.path.join(CUR_FOLDER, "AlibabaPuHuiTi-3-55-Regular.ttf")
@@ -100,41 +98,27 @@ name_font_path = os.path.join(CUR_FOLDER, "AlibabaPuHuiTi-3-55-Regular.ttf")
 hex_font_path = os.path.join(CUR_FOLDER, "monaco.ttf")
 other_font_path = os.path.join(CUR_FOLDER, "AlibabaPuHuiTi-3-55-Regular.ttf")
 
-tfont0 = TTFont(font_path0)
-tfont1 = TTFont(font_path1)
-tfont2 = TTFont(font_path2)
-tfont3 = TTFont(font_path3)
-tfont4 = TTFont(font_path4)
-tfont5 = TTFont(font_path5)
-#tfont6 = TTFont(font_path6)
-#tfont7 = TTFont(font_path7)
-#tfont8 = TTFont(font_path8)
-#tfont9 = TTFont(font_path9)
-#tfont10 = TTFont(font_path10)
+tfont_times = TTFont(font_path_times)
+tfont_com = TTFont(font_path_com)
+tfont_d0 = TTFont(font_path_d0)
+tfont_p1 = TTFont(font_path_p1)
+tfont_p2 = TTFont(font_path_p2)
 
-font_cmap0 = tfont0["cmap"].tables
-font_cmap1 = tfont1["cmap"].tables
-font_cmap2 = tfont2["cmap"].tables
-font_cmap3 = tfont3["cmap"].tables
-font_cmap4 = tfont4["cmap"].tables
-font_cmap5 = tfont5["cmap"].tables
-#font_cmap6 = tfont6["cmap"].tables
-#font_cmap7 = tfont7["cmap"].tables
-#font_cmap8 = tfont8["cmap"].tables
-#font_cmap9 = tfont9["cmap"].tables
-#font_cmap10 = tfont10["cmap"].tables
+font_cmap_times = tfont_times["cmap"].tables
+font_cmap_com = tfont_com["cmap"].tables
+font_cmap_d0 = tfont_d0["cmap"].tables
+font_cmap_p1 = tfont_p1["cmap"].tables
+font_cmap_p2 = tfont_p2["cmap"].tables
 
-font0 = ImageFont.truetype(font_path0, EXAMPLE_FONT_SIZE)
-font1 = ImageFont.truetype(font_path1, EXAMPLE_FONT_SIZE)
-font2 = ImageFont.truetype(font_path2, EXAMPLE_FONT_SIZE)
-font3 = ImageFont.truetype(font_path3, EXAMPLE_FONT_SIZE)
-font4 = ImageFont.truetype(font_path4, EXAMPLE_FONT_SIZE)
-font5 = ImageFont.truetype(font_path5, EXAMPLE_FONT_SIZE)
-font6 = ImageFont.truetype(font_path6, EXAMPLE_FONT_SIZE)
-font7 = ImageFont.truetype(font_path7, EXAMPLE_FONT_SIZE)
-font8 = ImageFont.truetype(font_path8, EXAMPLE_FONT_SIZE)
-font9 = ImageFont.truetype(font_path9, EXAMPLE_FONT_SIZE)
-font10 = ImageFont.truetype(font_path10, EXAMPLE_FONT_SIZE)
+font_times = ImageFont.truetype(font_path_times, EXAMPLE_FONT_SIZE)
+font_com = ImageFont.truetype(font_path_com, EXAMPLE_FONT_SIZE)
+font_d0 = ImageFont.truetype(font_path_d0, EXAMPLE_FONT_SIZE)
+font_p1 = ImageFont.truetype(font_path_p1, EXAMPLE_FONT_SIZE)
+font_p2 = ImageFont.truetype(font_path_p2, EXAMPLE_FONT_SIZE)
+font_mh = ImageFont.truetype(font_path_mh, EXAMPLE_FONT_SIZE)
+font_ctrl = ImageFont.truetype(font_path_ctrl, EXAMPLE_FONT_SIZE)
+font_mht = ImageFont.truetype(font_path_mht, EXAMPLE_FONT_SIZE)
+font_last = ImageFont.truetype(font_path_last, EXAMPLE_FONT_SIZE)
 
 def merge_iterables(*iterables):
     result_list = []
@@ -351,7 +335,7 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
             break
     if skip_no_glyph and font is None:
         return "skip"
-    global font0, font1, font2, font3, font4, font5, font6, font7, font8, font9, font10, bgcs
+    global font_times, font_com, font_d0, font_p1, font_p2, font_mh, font_ctrl, font_mht, font_last, bgcs
     text = chr(_code)
     if _code == 0x8:
         text = "␈"
@@ -379,13 +363,13 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
     if font is not None:
         ...
     elif _code in HIDDEN_CHAR:
-        font = font8
+        font = font_ctrl
     elif 0x20000 <= _code <= 0x2A6DF:
-        font = font9
-    elif 0x2A700 <= _code <= 0x2FA1D:
-        font = font5
-    elif 0x30000 <= _code <= 0x323AF:
-        font = font6
+        font = font_mht
+    elif check_glyph_in_font(font_cmap_p1, _code):
+        font = font_p1
+    elif check_glyph_in_font(font_cmap_p2, _code):
+        font = font_p2
     elif (0x4E00 <= _code <= 0x9FFF or
           0x2E80 <= _code <= 0x2EF3 or
           0x2F00 <= _code <= 0x2FD5 or
@@ -393,17 +377,13 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
           0x31C0 <= _code <= 0x31E3 or
           _code == 0x31EF or
           0x3400 <= _code <= 0x4DBF):
-        font = font7
-    elif check_glyph_in_font(font_cmap0, _code):
-        font = font0
-    elif check_glyph_in_font(font_cmap1, _code):
-        font = font1
-    elif check_glyph_in_font(font_cmap2, _code):
-        font = font2
-    elif check_glyph_in_font(font_cmap3, _code):
-        font = font3
-    elif check_glyph_in_font(font_cmap4, _code):
-        font = font4
+        font = font_mh
+    elif check_glyph_in_font(font_cmap_times, _code):
+        font = font_times
+    elif check_glyph_in_font(font_cmap_com, _code):
+        font = font_com
+    elif check_glyph_in_font(font_cmap_d0, _code):
+        font = font_d0
     
     code = "U+" + hex(_code)[2:].upper().zfill(4)
     image = Image.new(mode, (w, h), color=bgc)
@@ -492,12 +472,12 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
         y = h/2 - text_height/2
         draw.text((x, y), text, font=font, fill=textc)
     elif use_last:
-        bbox = font10.getbbox(text)
+        bbox = font_last.getbbox(text)
         text_width = bbox[2] - bbox[0]
         text_height = bbox[3] - bbox[1]
         x = w/2 - text_width/2
         y = h/2 - text_height/2
-        draw.text((x, y), text, font=font10, fill=textc)
+        draw.text((x, y), text, font=font_last, fill=textc)
     else:
         text = None
         if _code in NOT_CHAR:
@@ -536,7 +516,11 @@ def generate_unicode_flash(width, height, out_path, codes, fps, _fonts, c_font, 
     
     with open(in_p, "w", encoding="utf8") as f:
         for code in tqdm(codes):
-            image = generate_a_image(width, height, code, c_font, b_font, o_font, r_font, h_font, n_font, fonts, use_last, show_private, skip_no_glyph, skip_undefined)
+            try:
+                image = generate_a_image(width, height, code, c_font, b_font, o_font, r_font, h_font, n_font, fonts, use_last, show_private, skip_no_glyph, skip_undefined)
+            except OSError as e:
+                print(hex(code))
+                exit()
             if image == "skip":
                 continue
             if bc or no_dynamic:
