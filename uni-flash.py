@@ -10,33 +10,6 @@ import re
 import csv
 import json
 
-bgcs = [
-    (171, 223, 86),
-    (109, 231, 78),
-    (104, 245, 159),
-    (0, 190, 157),
-    (0, 203, 129),
-    (168, 253, 154),
-    (153, 254, 169),
-    (152, 252, 202),
-    (152, 254, 235),
-    (151, 236, 253),
-    (51, 226, 253),
-    (52, 181, 223),
-    (0, 149, 224),
-    (205, 155, 255),
-    (171, 155, 255),
-    (238, 154, 255),
-    (255, 154, 240),
-    (254, 154, 204),
-    (255, 154, 170),
-    (252, 171, 154),
-    (251, 201, 154),
-    (253, 236, 153),
-    (238, 254, 153),
-    (207, 255, 155)
-]
-
 UNICODE_RE = re.compile(r"^([0-9a-fA-F]|10)?[0-9a-fA-F]{0,4}$")
 
 CUR_FOLDER = os.path.split(__file__)[0]
@@ -82,7 +55,7 @@ DEFINED_CHARACTER_LIST = set(json.load(open(os.path.join(CUR_FOLDER, "DefinedCha
 EXAMPLE_FONT_SIZE = 220
 
 font_path_times = os.path.join(CUR_FOLDER, "TH-Times.ttf")
-font_path_com = os.path.join(CUR_FOLDER, "Hancom.ttf")
+font_path_kr = os.path.join(CUR_FOLDER, "NotoSansKR-Regular.ttf")
 font_path_d0 = os.path.join(CUR_FOLDER, "TH-Disp-P0.ttf")
 font_path_p1 = os.path.join(CUR_FOLDER, "PlangothicP1-Regular(allideo).ttf")
 font_path_p2 = os.path.join(CUR_FOLDER, "PlangothicP2-Regular.ttf")
@@ -99,19 +72,19 @@ hex_font_path = os.path.join(CUR_FOLDER, "monaco.ttf")
 other_font_path = os.path.join(CUR_FOLDER, "AlibabaPuHuiTi-3-55-Regular.ttf")
 
 tfont_times = TTFont(font_path_times)
-tfont_com = TTFont(font_path_com)
+tfont_kr = TTFont(font_path_kr)
 tfont_d0 = TTFont(font_path_d0)
 tfont_p1 = TTFont(font_path_p1)
 tfont_p2 = TTFont(font_path_p2)
 
 font_cmap_times = tfont_times["cmap"].tables
-font_cmap_com = tfont_com["cmap"].tables
+font_cmap_kr = tfont_kr["cmap"].tables
 font_cmap_d0 = tfont_d0["cmap"].tables
 font_cmap_p1 = tfont_p1["cmap"].tables
 font_cmap_p2 = tfont_p2["cmap"].tables
 
 font_times = ImageFont.truetype(font_path_times, EXAMPLE_FONT_SIZE)
-font_com = ImageFont.truetype(font_path_com, EXAMPLE_FONT_SIZE)
+font_kr = ImageFont.truetype(font_path_kr, EXAMPLE_FONT_SIZE)
 font_d0 = ImageFont.truetype(font_path_d0, EXAMPLE_FONT_SIZE)
 font_p1 = ImageFont.truetype(font_path_p1, EXAMPLE_FONT_SIZE)
 font_p2 = ImageFont.truetype(font_path_p2, EXAMPLE_FONT_SIZE)
@@ -247,6 +220,10 @@ def inverse_color(c):
     return (255 - c[0], 255 - c[1], 255 - c[2])
 
 
+def gray(c):
+    return ((_l := int(c[0] * 0.299 + c[1] * 0.587 + c[2] * 0.114)), _l, _l)
+
+
 def auto_width(string, font, width):
     char_widths = [(bbox := font.getbbox(char))[2] - bbox[0] for char in string]
     current_width = 0
@@ -324,7 +301,36 @@ def gap(s):
     return " ".join([s[i:i+2] for i in range(0, len(s), 2)])
 
 
-bc = False
+bc = 0
+bgcs = tuple(map(
+    lambda c: (c, gray(inverse_color(c))),
+    [
+        (171, 223, 86),
+        (109, 231, 78),
+        (104, 245, 159),
+        (0, 190, 157),
+        (0, 203, 129),
+        (168, 253, 154),
+        (153, 254, 169),
+        (152, 252, 202),
+        (152, 254, 235),
+        (151, 236, 253),
+        (51, 226, 253),
+        (52, 181, 223),
+        (0, 149, 224),
+        (205, 155, 255),
+        (171, 155, 255),
+        (238, 154, 255),
+        (255, 154, 240),
+        (254, 154, 204),
+        (255, 154, 170),
+        (252, 171, 154),
+        (251, 201, 154),
+        (253, 236, 153),
+        (238, 254, 153),
+        (207, 255, 155)
+    ]
+))
 def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font, fonts, use_last, show_private, skip_no_glyph, skip_undefined):
     if skip_undefined and not is_defined(_code):
         return "skip"
@@ -335,7 +341,7 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
             break
     if skip_no_glyph and font is None:
         return "skip"
-    global font_times, font_com, font_d0, font_p1, font_p2, font_mh, font_ctrl, font_mht, font_last, bgcs
+    global font_times, font_kr, font_d0, font_p1, font_p2, font_mh, font_ctrl, font_mht, font_last, bgcs
     text = chr(_code)
     if _code == 0x8:
         text = "␈"
@@ -348,17 +354,19 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
     
     mode = "RGB" if bc else "L"
     
-    bgc = (20, 20, 20)
+    if not bc:
+        bgc = 20
+        textc = 235
     r = ("未定义", "未定义", "undefined")
     for index, item in enumerate(BLOCKS):
         if item[0][0] <= _code <= item[0][1]:
             r = item[1]
-            bgc = bgcs[(index + 1) % len(bgcs)]
+            if bc:
+                bgc, textc = bgcs[(index + 1) % len(bgcs)]
             break
-    textc = inverse_color(bgc)
-    if not bc:
-        bgc = 20
-        textc = 235
+    else:
+        if bc:
+            bgc, textc = ((20, 20, 20), (235, 235, 235))
     
     if font is not None:
         ...
@@ -366,9 +374,9 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
         font = font_ctrl
     elif 0x20000 <= _code <= 0x2A6DF:
         font = font_mht
-    elif check_glyph_in_font(font_cmap_p1, _code):
+    elif 0x2A700 <= _code <= 0x2FFFF and check_glyph_in_font(font_cmap_p1, _code):
         font = font_p1
-    elif check_glyph_in_font(font_cmap_p2, _code):
+    elif 0x30000 <= _code <= 0x3FFFF and check_glyph_in_font(font_cmap_p2, _code):
         font = font_p2
     elif (0x4E00 <= _code <= 0x9FFF or
           0x2E80 <= _code <= 0x2EF3 or
@@ -380,8 +388,8 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
         font = font_mh
     elif check_glyph_in_font(font_cmap_times, _code):
         font = font_times
-    elif check_glyph_in_font(font_cmap_com, _code):
-        font = font_com
+    elif check_glyph_in_font(font_cmap_kr, _code):
+        font = font_kr
     elif check_glyph_in_font(font_cmap_d0, _code):
         font = font_d0
     
@@ -518,9 +526,9 @@ def generate_unicode_flash(width, height, out_path, codes, fps, _fonts, c_font, 
         for code in tqdm(codes):
             try:
                 image = generate_a_image(width, height, code, c_font, b_font, o_font, r_font, h_font, n_font, fonts, use_last, show_private, skip_no_glyph, skip_undefined)
-            except OSError as e:
-                print(hex(code))
-                exit()
+            except OSError:
+                print(f"在U+{hex(code)[2:].upper().zfill(4)}处发生raster overflow，已跳过。")
+                continue
             if image == "skip":
                 continue
             if bc or no_dynamic:
