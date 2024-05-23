@@ -331,7 +331,7 @@ bgcs = tuple(map(
         (207, 255, 155)
     ]
 ))
-def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font, fonts, use_last, show_private, skip_no_glyph, skip_undefined):
+def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font, fonts, use_last, show_private, skip_no_glyph, skip_undefined, show_undefined):
     if skip_undefined and not is_defined(_code):
         return "skip"
     font = None
@@ -479,6 +479,13 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
         x = w/2 - text_width/2
         y = h/2 - text_height/2
         draw.text((x, y), text, font=font, fill=textc)
+    elif show_undefined and font is not None and not is_defined(_code):
+        bbox = font.getbbox(text)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
+        x = w/2 - text_width/2
+        y = h/2 - text_height/2
+        draw.text((x, y), text, font=font, fill=textc)
     elif use_last:
         bbox = font_last.getbbox(text)
         text_width = bbox[2] - bbox[0]
@@ -511,7 +518,7 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
     return image
 
 
-def generate_unicode_flash(width, height, out_path, codes, fps, _fonts, c_font, b_font, o_font, r_font, h_font, n_font, use_last, no_dynamic, show_private, no_music, skip_no_glyph, skip_undefined, save_bmp):
+def generate_unicode_flash(width, height, out_path, codes, fps, _fonts, c_font, b_font, o_font, r_font, h_font, n_font, use_last, no_dynamic, show_private, no_music, skip_no_glyph, skip_undefined, save_bmp, show_undefined):
     fonts = tuple(zip(map(lambda f: ImageFont.truetype(f, EXAMPLE_FONT_SIZE), _fonts), map(lambda f: TTFont(f)["cmap"].tables, _fonts)))
     a = []
     count = 0
@@ -525,7 +532,7 @@ def generate_unicode_flash(width, height, out_path, codes, fps, _fonts, c_font, 
     with open(in_p, "w", encoding="utf8") as f:
         for code in tqdm(codes):
             try:
-                image = generate_a_image(width, height, code, c_font, b_font, o_font, r_font, h_font, n_font, fonts, use_last, show_private, skip_no_glyph, skip_undefined)
+                image = generate_a_image(width, height, code, c_font, b_font, o_font, r_font, h_font, n_font, fonts, use_last, show_private, skip_no_glyph, skip_undefined, show_undefined)
             except OSError:
                 print(f"在U+{hex(code)[2:].upper().zfill(4)}处发生raster overflow，已跳过。")
                 continue
@@ -590,6 +597,8 @@ if __name__ == "__main__":
                         help='以静态图片模式保存临时图片')
     parser.add_argument('-show_private', action='store_true',
                         help='展示私用区字符')
+    parser.add_argument('-show_undefined', action='store_true',
+                        help='展示在自定义字体中有字形的未定义字符')
     parser.add_argument('-no_music', action='store_true',
                         help='不添加音乐')
     parser.add_argument('-skip_no_glyph', action='store_true',
@@ -616,4 +625,4 @@ if __name__ == "__main__":
         codes = map(lambda v: int(v) if UNICODE_RE.search(v) else _ve(v), args.from_file.read().split(","))
     elif args.from_font:
         codes = sorted(list(set(merge_iterables(*[get_all_codes_from_font(font) for font in args.fonts]))))
-    generate_unicode_flash(args.width, args.height, args.out_path, codes, args.fps, args.fonts, c_font, b_font, o_font, r_font, h_font, n_font, args.use_last, args.no_dynamic, args.show_private, args.no_music, args.skip_no_glyph, args.skip_undefined, args.save_bmp)
+    generate_unicode_flash(args.width, args.height, args.out_path, codes, args.fps, args.fonts, c_font, b_font, o_font, r_font, h_font, n_font, args.use_last, args.no_dynamic, args.show_private, args.no_music, args.skip_no_glyph, args.skip_undefined, args.save_bmp, args.show_undefined)
