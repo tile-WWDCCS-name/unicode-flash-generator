@@ -39,7 +39,7 @@ python uni-flash.py 15 -from_file 1.txt
 
 如果1.txt文件的内容是
 ```text
-1,2,3,4,4e00,9FFE
+1,2,3,4,4E00,9FFE
 ```
 **十六进制不区分大小写。**
 
