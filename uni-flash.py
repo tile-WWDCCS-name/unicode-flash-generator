@@ -18,7 +18,7 @@ NOT_CHAR = [0xFFFE, 0xFFFF, 0x1FFFE, 0x1FFFF, 0x2FFFE, 0x2FFFF, 0x3FFFE, 0x3FFFF
 NOT_CHAR.extend(range(0xFDD0, 0xFDF0))
 #CTRL_CHAR = (0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x7F, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x8D, 0x8E, 0x8F, 0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0x9A, 0x9B, 0x9C, 0x9D, 0x9E, 0x9F)
 HIDDEN_CHAR = tuple(
-    list(set([i for i in range(0x21)]) - {0xD})  +
+    [i for i in range(0x21)]  +
     [i for i in range(0x7F, 0xA1)] +
     [0xAD, 0x34F, 0x61C, 0x890,
      0x891, 0x180B, 0x180C, 0x180D,
@@ -60,7 +60,7 @@ font_path_d0 = os.path.join(CUR_FOLDER, "TH-Disp-P0.ttf")
 font_path_p1 = os.path.join(CUR_FOLDER, "PlangothicP1-Regular(allideo).ttf")
 font_path_p2 = os.path.join(CUR_FOLDER, "PlangothicP2-Regular.ttf")
 font_path_mh = os.path.join(CUR_FOLDER, "MonuHani-9.69.ttf")
-font_path_ctrl = os.path.join(CUR_FOLDER, "CtrlCtrl-1.1.ttf")
+font_path_ctrl = os.path.join(CUR_FOLDER, "CtrlCtrl-1.101.ttf")
 font_path_mht = os.path.join(CUR_FOLDER, "MonuHanp-3.001.ttf")
 font_path_last = os.path.join(CUR_FOLDER, "MonuLast-8.16-1.ttf")
 
@@ -342,12 +342,12 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
     if skip_no_glyph and font is None:
         return "skip"
     global font_times, font_kr, font_d0, font_p1, font_p2, font_mh, font_ctrl, font_mht, font_last, bgcs
-    text = chr(_code)
-    if _code == 0x8:
-        text = "␈"
-    elif _code == 0x9:
-        text = "␉"
-    
+    if _code == 0xA:
+        text = "␊"
+    elif _code == 0xD:
+        text = "␍"
+    else:
+        text = chr(_code)
     utf8 = "UTF-8: " + gap(to_utf8_hex(_code))
     utf16le = "UTF-16LE: " + gap(to_utf16le_hex(_code))
     utf16be = "UTF-16BE: " + gap(to_utf16be_hex(_code))
@@ -465,7 +465,7 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
     draw.text((35, alias_height + comment_height + 15), version, font=n_font, fill=textc)
     
     if is_defined(_code) and (not is_private_use(_code)):
-        if font is not None and _code != 0xD:
+        if font is not None:
             bbox = font.getbbox(text)
             text_width = bbox[2] - bbox[0]
             text_height = bbox[3] - bbox[1]
