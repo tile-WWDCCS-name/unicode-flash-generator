@@ -331,8 +331,8 @@ bgcs = tuple(map(
         (207, 255, 155)
     ]
 ))
-def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font, fonts, use_last, show_private, skip_no_glyph, skip_undefined, show_undefined):
-    if skip_undefined and not is_defined(_code):
+def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font, fonts, use_last, show_private, skip_no_glyph, skip_undefined, show_undefined, skip_long):
+    if (skip_undefined and not is_defined(_code)) or (skip_long and 0x323B0 <= _code <= 0xDFFFF):
         return "skip"
     font = None
     for _font, font_cmap in fonts:
@@ -518,7 +518,7 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
     return image
 
 
-def generate_unicode_flash(width, height, out_path, codes, fps, _fonts, c_font, b_font, o_font, r_font, h_font, n_font, use_last, no_dynamic, show_private, no_music, skip_no_glyph, skip_undefined, save_bmp, show_undefined):
+def generate_unicode_flash(width, height, out_path, codes, fps, _fonts, c_font, b_font, o_font, r_font, h_font, n_font, use_last, no_dynamic, show_private, no_music, skip_no_glyph, skip_undefined, save_bmp, show_undefined, skip_long, music):
     fonts = tuple(zip(map(lambda f: ImageFont.truetype(f, EXAMPLE_FONT_SIZE), _fonts), map(lambda f: TTFont(f)["cmap"].tables, _fonts)))
     a = []
     count = 0
@@ -532,7 +532,7 @@ def generate_unicode_flash(width, height, out_path, codes, fps, _fonts, c_font, 
     with open(in_p, "w", encoding="utf8") as f:
         for code in tqdm(codes):
             try:
-                image = generate_a_image(width, height, code, c_font, b_font, o_font, r_font, h_font, n_font, fonts, use_last, show_private, skip_no_glyph, skip_undefined, show_undefined)
+                image = generate_a_image(width, height, code, c_font, b_font, o_font, r_font, h_font, n_font, fonts, use_last, show_private, skip_no_glyph, skip_undefined, show_undefined, skip_long)
             except OSError:
                 print(f"在U+{hex(code)[2:].upper().zfill(4)}处发生raster overflow，已跳过。")
                 continue
@@ -565,7 +565,7 @@ def generate_unicode_flash(width, height, out_path, codes, fps, _fonts, c_font, 
         os.system(f'ffmpeg -r {fps} -f concat -safe 0 -i {os.path.abspath(in_p)} -pix_fmt yuv420p {os.path.abspath(out_path)} -hide_banner')
     else:
         os.system(f'ffmpeg -r {fps} -f concat -safe 0 -i {os.path.abspath(in_p)} -pix_fmt yuv420p {os.path.join(temp_dir, "out.mp4")} -hide_banner')
-        os.system(f'ffmpeg -i {os.path.join(temp_dir, "out.mp4")} -stream_loop -1 -i {os.path.join(CUR_FOLDER, "UFM.mp3")} -c copy -shortest {os.path.abspath(out_path)} -hide_banner')
+        os.system(f'ffmpeg -i {os.path.join(temp_dir, "out.mp4")} -stream_loop -1 -i {music} -c copy -shortest {os.path.abspath(out_path)} -hide_banner')
 
 
 if __name__ == "__main__":
@@ -605,6 +605,10 @@ if __name__ == "__main__":
                         help='跳过在所有自定义字体中都没有字形的字符')
     parser.add_argument('-skip_undefined', action='store_true',
                         help='跳过未定义字符、非字符、代理字符等')
+    parser.add_argument('-skip_long', action='store_true',
+                        help='跳过U+323B0-U+DFFFF')
+    parser.add_argument('-music', type=str, default=os.path.join(CUR_FOLDER, "UFM.mp3"),
+                        help='背景音乐文件路径')
     parser.add_argument('-save_bmp', action='store_true',
                         help='存为bmp格式，仅在-no_dynamic启用时生效，能大幅增加生成速度，但有更大概率抛出OSError: raster overflow错误。')
     chars_group = parser.add_mutually_exclusive_group(required=True)
@@ -625,4 +629,4 @@ if __name__ == "__main__":
         codes = map(lambda v: int(v) if UNICODE_RE.search(v) else _ve(v), args.from_file.read().split(","))
     elif args.from_font:
         codes = sorted(list(set(merge_iterables(*[get_all_codes_from_font(font) for font in args.fonts]))))
-    generate_unicode_flash(args.width, args.height, args.out_path, codes, args.fps, args.fonts, c_font, b_font, o_font, r_font, h_font, n_font, args.use_last, args.no_dynamic, args.show_private, args.no_music, args.skip_no_glyph, args.skip_undefined, args.save_bmp, args.show_undefined)
+    generate_unicode_flash(args.width, args.height, args.out_path, codes, args.fps, args.fonts, c_font, b_font, o_font, r_font, h_font, n_font, args.use_last, args.no_dynamic, args.show_private, args.no_music, args.skip_no_glyph, args.skip_undefined, args.save_bmp, args.show_undefined, args.skip_long, args.music)
