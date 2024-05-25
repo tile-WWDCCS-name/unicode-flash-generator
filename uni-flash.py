@@ -50,6 +50,12 @@ with open(os.path.join(CUR_FOLDER, "Blocks.csv"), encoding="utf-8") as blocks_cs
     reader = csv.reader(blocks_csv, delimiter='|')
     BLOCKS = {tuple(map(lambda rang: int(rang, 16), line[0].split(".."))): (line[2], "-".join(map(lambda rang: "U+" + rang, line[0].split(".."))), line[-1]) for line in reader}.items()
 
+def get_font_cn_name(names):
+    for name in names:
+        if name.nameID == 4:
+            return name.string.decode("UTF-8")
+
+
 NAME_LIST = json.load(open(os.path.join(CUR_FOLDER, "NameList.json"), encoding="utf8"))
 DEFINED_CHARACTER_LIST = set(json.load(open(os.path.join(CUR_FOLDER, "DefinedCharacterList.json"), encoding="utf8")))
 EXAMPLE_FONT_SIZE = 220
@@ -70,6 +76,7 @@ range_font_path = os.path.join(CUR_FOLDER, "AlibabaPuHuiTi-3-55-Regular.ttf")
 code_font_path = os.path.join(CUR_FOLDER, "monaco.ttf")
 name_font_path = os.path.join(CUR_FOLDER, "AlibabaPuHuiTi-3-55-Regular.ttf")
 hex_font_path = os.path.join(CUR_FOLDER, "monaco.ttf")
+font_name_font_path = os.path.join(CUR_FOLDER, "AlibabaPuHuiTi-3-55-Regular.ttf")
 other_font_path = os.path.join(CUR_FOLDER, "AlibabaPuHuiTi-3-55-Regular.ttf")
 
 tfont_times = TTFont(font_path_times)
@@ -77,6 +84,10 @@ tfont_kr = TTFont(font_path_kr)
 tfont_d0 = TTFont(font_path_d0)
 tfont_p1 = TTFont(font_path_p1)
 tfont_p2 = TTFont(font_path_p2)
+tfont_mh = TTFont(font_path_mh)
+tfont_ctrl = TTFont(font_path_ctrl)
+tfont_mht = TTFont(font_path_mht)
+tfont_last = TTFont(font_path_last)
 tfont_noto = TTFont(font_path_noto)
 
 font_cmap_times = tfont_times["cmap"].tables
@@ -96,6 +107,17 @@ font_ctrl = ImageFont.truetype(font_path_ctrl, EXAMPLE_FONT_SIZE)
 font_mht = ImageFont.truetype(font_path_mht, EXAMPLE_FONT_SIZE)
 font_last = ImageFont.truetype(font_path_last, EXAMPLE_FONT_SIZE)
 font_noto = ImageFont.truetype(font_path_noto, EXAMPLE_FONT_SIZE)
+
+font_name_times = get_font_cn_name(tfont_times['name'].names)
+font_name_kr = get_font_cn_name(tfont_kr['name'].names)
+font_name_d0 = get_font_cn_name(tfont_d0['name'].names)
+font_name_p1 = get_font_cn_name(tfont_p1['name'].names)
+font_name_p2 = get_font_cn_name(tfont_p2['name'].names)
+font_name_mh = get_font_cn_name(tfont_mh['name'].names)
+font_name_ctrl = get_font_cn_name(tfont_ctrl['name'].names)
+font_name_mht = get_font_cn_name(tfont_mht['name'].names)
+font_name_last = get_font_cn_name(tfont_last['name'].names)
+font_name_noto = get_font_cn_name(tfont_noto['name'].names)
 
 def merge_iterables(*iterables):
     result_list = []
@@ -304,6 +326,32 @@ def to_utf16le_hex(code):
 def gap(s):
     return " ".join([s[i:i+2] for i in range(0, len(s), 2)])
 
+vari_viram_punctuation4 = set([
+    0x9E4,
+    0xA64,
+    0xAE4,
+    0xB64,
+    0xBE4,
+    0xC64,
+    0xCE4,
+    0xD64
+])
+vari_viram_punctuation5 = set([
+    0x9E5,
+    0xA65,
+    0xAE5,
+    0xB65,
+    0xBE5,
+    0xC65,
+    0xCE5,
+    0xD65
+])
+
+def is_vari_viram_punctuation(code):
+    if code in vari_viram_punctuation4 or code in vari_viram_punctuation5:
+        return True
+    return False
+
 
 bc = 0
 bgcs = tuple(map(
@@ -335,20 +383,39 @@ bgcs = tuple(map(
         (207, 255, 155)
     ]
 ))
-def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font, fonts, use_last, show_private, skip_no_glyph, skip_undefined, show_undefined, skip_long):
+def generate_a_image(w, h, _code,
+                     c_font, b_font, o_font, r_font, h_font, n_font, fn_font,
+                     fonts, use_last, show_private, skip_no_glyph, skip_undefined, show_undefined, skip_long):
     if (skip_long and 0x323B0 <= _code <= 0xDFFFF) or (skip_undefined and not is_defined(_code)):
         return "skip"
     font = None
-    for _font, font_cmap in fonts:
+    for _font, font_cmap, _font_name in fonts:
         if check_glyph_in_font(font_cmap, _code):
             font = _font
+            font_name = _font_name
             break
     if skip_no_glyph and font is None:
         return "skip"
     if _code == 0xA:
-        text = "␊"
+        text = "\u240A"
     elif _code == 0xD:
-        text = "␍"
+        text = "\u240D"
+    elif _code in vari_viram_punctuation4:
+        text = "\u0964"
+        font = font_noto
+        font_name = font_name_noto
+    elif _code in vari_viram_punctuation5:
+        text = "\u0965"
+        font = font_noto
+        font_name = font_name_noto
+    elif _code == 0x2072:
+        text = "\u00B2"
+        font = font_noto
+        font_name = font_name_noto
+    elif _code == 0x2073:
+        text = "\u00B3"
+        font = font_noto
+        font_name = font_name_noto
     else:
         text = chr(_code)
     utf8 = "UTF-8: " + gap(to_utf8_hex(_code))
@@ -375,12 +442,16 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
         ...
     elif _code in HIDDEN_CHAR:
         font = font_ctrl
+        font_name = font_name_ctrl
     elif 0x20000 <= _code <= 0x2A6DF:
         font = font_mht
+        font_name = font_name_mht
     elif 0x2A700 <= _code <= 0x2FFFF and check_glyph_in_font(font_cmap_p1, _code):
         font = font_p1
+        font_name = font_name_p1
     elif 0x30000 <= _code <= 0x3FFFF and check_glyph_in_font(font_cmap_p2, _code):
         font = font_p2
+        font_name = font_name_p2
     elif (0x4E00 <= _code <= 0x9FFF or
           0x2E80 <= _code <= 0x2EF3 or
           0x2F00 <= _code <= 0x2FD5 or
@@ -389,16 +460,24 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
           _code == 0x31EF or
           0x3400 <= _code <= 0x4DBF):
         font = font_mh
+        font_name = font_name_mh
     elif check_glyph_in_font(font_cmap_kr, _code):
         font = font_kr
+        font_name = font_name_kr
     elif check_glyph_in_font(font_cmap_noto, _code):
         font = font_noto
+        font_name = font_name_noto
     elif check_glyph_in_font(font_cmap_times, _code):
         font = font_times
+        font_name = font_name_times
     elif check_glyph_in_font(font_cmap_d0, _code):
         font = font_d0
+        font_name = font_name_d0
     elif use_last:
         font = font_last
+        font_name = font_name_last
+    else:
+        font_name = "no font"
     
     code = "U+" + hex(_code)[2:].upper().zfill(4)
     image = Image.new(mode, (w, h), color=bgc)
@@ -411,6 +490,12 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
     code_x = w - code_width - 15
     code_y = h - code_height*1.5 - 5
     draw.text((code_x, code_y), code, font=c_font, fill=textc)
+    
+    fn = "字体：" + font_name
+    bbox = fn_font.getbbox(fn)
+    fn_width = bbox[2] - bbox[0]
+    fn_height = bbox[3] - bbox[1]
+    draw.text((w - fn_width - 15, code_y - fn_height - 5), fn, font=fn_font, fill=textc)
     
     bbox = h_font.getbbox(utf8)
     utf8_width = bbox[2] - bbox[0]
@@ -494,7 +579,6 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
         y = h/2 - text_height/2
         draw.text((x, y), text, font=font, fill=textc)
     else:
-        text = None
         if _code in NOT_CHAR:
             text = f"非字符 {code}"
         elif 0xD800 <= _code <= 0xDB7F:
@@ -518,8 +602,10 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
     return image
 
 
-def generate_unicode_flash(width, height, out_path, codes, fps, _fonts, c_font, b_font, o_font, r_font, h_font, n_font, use_last, no_dynamic, show_private, no_music, skip_no_glyph, skip_undefined, save_bmp, show_undefined, skip_long, music):
-    fonts = tuple(zip(map(lambda f: ImageFont.truetype(f, EXAMPLE_FONT_SIZE), _fonts), map(lambda f: TTFont(f)["cmap"].tables, _fonts)))
+def generate_unicode_flash(width, height, out_path, codes, fps, _fonts,
+                           c_font, b_font, o_font, r_font, h_font, n_font, fn_font,
+                           use_last, no_dynamic, show_private, no_music, skip_no_glyph, skip_undefined, save_bmp, show_undefined, skip_long, music):
+    fonts = tuple(zip(map(lambda f: ImageFont.truetype(f, EXAMPLE_FONT_SIZE), _fonts), map(lambda f: TTFont(f)["cmap"].tables, _fonts), map(lambda f: get_font_cn_name(TTFont(f)['name'].names), _fonts)))
     a = []
     count = 0
     temp_dir = os.path.join(CUR_FOLDER, "res")
@@ -532,7 +618,7 @@ def generate_unicode_flash(width, height, out_path, codes, fps, _fonts, c_font, 
     with open(in_p, "w", encoding="utf8") as f:
         for code in tqdm(codes):
             try:
-                image = generate_a_image(width, height, code, c_font, b_font, o_font, r_font, h_font, n_font, fonts, use_last, show_private, skip_no_glyph, skip_undefined, show_undefined, skip_long)
+                image = generate_a_image(width, height, code, c_font, b_font, o_font, r_font, h_font, n_font, fn_font, fonts, use_last, show_private, skip_no_glyph, skip_undefined, show_undefined, skip_long)
             except OSError:
                 print(f"在U+{hex(code)[2:].upper().zfill(4)}处发生raster overflow，已跳过。")
                 continue
@@ -579,6 +665,7 @@ if __name__ == "__main__":
     r_font = ImageFont.truetype(range_font_path, 40)
     h_font = ImageFont.truetype(hex_font_path, 25)
     n_font = ImageFont.truetype(name_font_path, 30)
+    fn_font = ImageFont.truetype(font_name_font_path, 40)
     
     parser = argparse.ArgumentParser(description="这是一个Unicode快闪生成脚本")
     parser.add_argument('fps', type=float,
@@ -629,4 +716,4 @@ if __name__ == "__main__":
         codes = map(lambda v: int(v) if UNICODE_RE.search(v) else _ve(v), args.from_file.read().split(","))
     elif args.from_font:
         codes = sorted(list(set(merge_iterables(*[get_all_codes_from_font(font) for font in args.fonts]))))
-    generate_unicode_flash(args.width, args.height, args.out_path, codes, args.fps, args.fonts, c_font, b_font, o_font, r_font, h_font, n_font, args.use_last, args.no_dynamic, args.show_private, args.no_music, args.skip_no_glyph, args.skip_undefined, args.save_bmp, args.show_undefined, args.skip_long, args.music)
+    generate_unicode_flash(args.width, args.height, args.out_path, codes, args.fps, args.fonts, c_font, b_font, o_font, r_font, h_font, n_font, fn_font, args.use_last, args.no_dynamic, args.show_private, args.no_music, args.skip_no_glyph, args.skip_undefined, args.save_bmp, args.show_undefined, args.skip_long, args.music)
