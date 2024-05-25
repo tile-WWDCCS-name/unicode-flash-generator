@@ -397,6 +397,8 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
         font = font_times
     elif check_glyph_in_font(font_cmap_d0, _code):
         font = font_d0
+    elif use_last:
+        font = font_last
     
     code = "U+" + hex(_code)[2:].upper().zfill(4)
     image = Image.new(mode, (w, h), color=bgc)
@@ -469,7 +471,7 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
     version = "version: " + get_char_version(_code)
     draw.text((35, alias_height + comment_height + 15), version, font=n_font, fill=textc)
     
-    if is_defined(_code) and (not is_private_use(_code)):
+    if (is_defined(_code) and (not is_private_use(_code))) or use_last:
         if font is not None:
             bbox = font.getbbox(text)
             text_width = bbox[2] - bbox[0]
@@ -491,13 +493,6 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
         x = w/2 - text_width/2
         y = h/2 - text_height/2
         draw.text((x, y), text, font=font, fill=textc)
-    elif use_last:
-        bbox = font_last.getbbox(text)
-        text_width = bbox[2] - bbox[0]
-        text_height = bbox[3] - bbox[1]
-        x = w/2 - text_width/2
-        y = h/2 - text_height/2
-        draw.text((x, y), text, font=font_last, fill=textc)
     else:
         text = None
         if _code in NOT_CHAR:
