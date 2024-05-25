@@ -17,7 +17,7 @@ CUR_FOLDER = os.path.split(__file__)[0]
 NOT_CHAR = [0xFFFE, 0xFFFF, 0x1FFFE, 0x1FFFF, 0x2FFFE, 0x2FFFF, 0x3FFFE, 0x3FFFF, 0x4FFFE, 0x4FFFF, 0x5FFFE, 0x5FFFF, 0x6FFFE, 0x6FFFF, 0x7FFFE, 0x7FFFF, 0x8FFFE, 0x8FFFF, 0x9FFFE, 0x9FFFF, 0xAFFFE, 0xAFFFF, 0xBFFFE, 0xBFFFF, 0xCFFFE, 0xCFFFF, 0xDFFFE, 0xDFFFF, 0xEFFFE, 0xEFFFF, 0xFFFFE, 0xFFFFF, 0x10FFFE, 0x10FFFF]
 NOT_CHAR.extend(range(0xFDD0, 0xFDF0))
 #CTRL_CHAR = (0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x7F, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x8D, 0x8E, 0x8F, 0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0x9A, 0x9B, 0x9C, 0x9D, 0x9E, 0x9F)
-HIDDEN_CHAR = tuple(
+HIDDEN_CHAR = set(
     [i for i in range(0x21)]  +
     [i for i in range(0x7F, 0xA1)] +
     [0xAD, 0x34F, 0x61C, 0x890,
@@ -63,6 +63,7 @@ font_path_mh = os.path.join(CUR_FOLDER, "MonuHani-9.69.ttf")
 font_path_ctrl = os.path.join(CUR_FOLDER, "CtrlCtrl-1.101.ttf")
 font_path_mht = os.path.join(CUR_FOLDER, "MonuHanp-3.001.ttf")
 font_path_last = os.path.join(CUR_FOLDER, "MonuLast-8.16-1.ttf")
+font_path_noto = os.path.join(CUR_FOLDER, "NotoUnicode-7.3.ttf")
 
 block_name_font_path = os.path.join(CUR_FOLDER, "AlibabaPuHuiTi-3-55-Regular.ttf")
 range_font_path = os.path.join(CUR_FOLDER, "AlibabaPuHuiTi-3-55-Regular.ttf")
@@ -76,12 +77,14 @@ tfont_kr = TTFont(font_path_kr)
 tfont_d0 = TTFont(font_path_d0)
 tfont_p1 = TTFont(font_path_p1)
 tfont_p2 = TTFont(font_path_p2)
+tfont_noto = TTFont(font_path_noto)
 
 font_cmap_times = tfont_times["cmap"].tables
 font_cmap_kr = tfont_kr["cmap"].tables
 font_cmap_d0 = tfont_d0["cmap"].tables
 font_cmap_p1 = tfont_p1["cmap"].tables
 font_cmap_p2 = tfont_p2["cmap"].tables
+font_cmap_noto = tfont_noto["cmap"].tables
 
 font_times = ImageFont.truetype(font_path_times, EXAMPLE_FONT_SIZE)
 font_kr = ImageFont.truetype(font_path_kr, EXAMPLE_FONT_SIZE)
@@ -92,6 +95,7 @@ font_mh = ImageFont.truetype(font_path_mh, EXAMPLE_FONT_SIZE)
 font_ctrl = ImageFont.truetype(font_path_ctrl, EXAMPLE_FONT_SIZE)
 font_mht = ImageFont.truetype(font_path_mht, EXAMPLE_FONT_SIZE)
 font_last = ImageFont.truetype(font_path_last, EXAMPLE_FONT_SIZE)
+font_noto = ImageFont.truetype(font_path_noto, EXAMPLE_FONT_SIZE)
 
 def merge_iterables(*iterables):
     result_list = []
@@ -332,7 +336,7 @@ bgcs = tuple(map(
     ]
 ))
 def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font, fonts, use_last, show_private, skip_no_glyph, skip_undefined, show_undefined, skip_long):
-    if (skip_undefined and not is_defined(_code)) or (skip_long and 0x323B0 <= _code <= 0xDFFFF):
+    if (skip_long and 0x323B0 <= _code <= 0xDFFFF) or (skip_undefined and not is_defined(_code)):
         return "skip"
     font = None
     for _font, font_cmap in fonts:
@@ -341,7 +345,6 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
             break
     if skip_no_glyph and font is None:
         return "skip"
-    global font_times, font_kr, font_d0, font_p1, font_p2, font_mh, font_ctrl, font_mht, font_last, bgcs
     if _code == 0xA:
         text = "␊"
     elif _code == 0xD:
@@ -386,10 +389,12 @@ def generate_a_image(w, h, _code, c_font, b_font, o_font, r_font, h_font, n_font
           _code == 0x31EF or
           0x3400 <= _code <= 0x4DBF):
         font = font_mh
-    elif check_glyph_in_font(font_cmap_times, _code):
-        font = font_times
     elif check_glyph_in_font(font_cmap_kr, _code):
         font = font_kr
+    elif check_glyph_in_font(font_cmap_noto, _code):
+        font = font_noto
+    elif check_glyph_in_font(font_cmap_times, _code):
+        font = font_times
     elif check_glyph_in_font(font_cmap_d0, _code):
         font = font_d0
     
