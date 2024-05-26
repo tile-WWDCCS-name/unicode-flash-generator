@@ -2,8 +2,8 @@ import os
 import json
 import re
 
-NAME_LIST_PATH = "/storage/emulated/0/qpython/python代码/uni/unicode快闪/NameList/"
-OUT_PATH = "/storage/emulated/0/qpython/python代码/uni/unicode快闪/NameList.json"
+NAME_LIST_PATH = "/storage/emulated/0/下载/git/unicode快闪/NameList"
+OUT_PATH = "/storage/emulated/0/下载/git/unicode快闪/NameList.json"
 CTRL_NAME = {
     k: v for k, v in zip(tuple(range(0x20)) + tuple(range(0x7F, 0x100)), "NUL SOH STX ETX EOT ENQ ACK BEL BS HT LF VT FF CR SO SI DLE DC1 DC2 DC3 DC4 NAK SYN ETB CAN EM SUB ESC FS GS RS US DEL XXX(PAD) XXX(HOP) BPH NBH IND NEL SSA ESA HTS HTJ VTS PLD PLU R1 SS2 SS3 DCS PU1 PU2 STS CCH MW SPA EPA SOS XXX(SGCI) SCI CSI ST OSC PM APC".split())
 }
@@ -11,6 +11,8 @@ CTRL_NAME = {
 def edit_reserved(o):
     return f"<reserved - U+{hex(o.id)[2:].upper().zfill(4)}, original U+{o.xref[0]}>"
 
+
+UNICODE_RE = re.compile(r"^([0-9a-fA-F]|10)?[0-9a-fA-F]{0,4}$")
 
 characters = {}
 class OneCharacter:
@@ -98,19 +100,19 @@ for fp in sorted(find_files_by_extension(NAME_LIST_PATH, ".txt"), key=lambda v: 
                     if line[1] == '\t':
                         return
                     if line[1] == '*':
-                        current.comment.append(line[3:].replace('\'', '\'\''))
+                        current.comment.append(line[3:].replace('\'', '"'))
                     if line[1] == '=':
-                        current.alias.append(line[3:].replace('\'', '\'\''))
+                        current.alias.append(line[3:].replace('\'', '"'))
                     if line[1] == '%':
-                        current.formal.append(line[3:].replace('\'', '\'\''))
+                        current.formal.append(line[3:].replace('\'', '"'))
                     if line[1] == 'x':
-                        current.xref.append((line.split(' ')[-1][:-1] if line[3] == '(' else line[3:]).lstrip('0').replace('\'', '\'\''))
+                        current.xref.append("U+" + (line.split(' ')[-1][:-1] if line[3] == '(' else line[3:]).replace('\'', '"'))
                     if line[1] == '~':
-                        current.vari.append(' '.join(s.lstrip('0') for s in line[3:].split(' ')).replace('\'', '\'\''))
+                        current.vari.append(' '.join(("U+" + s if UNICODE_RE.search(s) else s) for s in line[3:].split(' ')).replace('\'', '"').rstrip(' '))
                     if line[1] == ':':
-                        current.decomp.append(' '.join(s.lstrip('0') for s in line[3:].split(' ') if re.match('^[0-9A-F]+$', s)).replace('\'', '\'\''))
+                        current.decomp.append(' '.join(("U+" + s if UNICODE_RE.search(s) else s) for s in line[3:].split(' ') if re.match('^[0-9A-F]+$', s)).replace('\'', '"'))
                     if line[1] == '#':
-                        current.compat.append(' '.join(s.lstrip('0') for s in line[3:].split(' ') if re.match('^([0-9A-F]+|<.*>)$', s)).replace('\'', '\'\''))
+                        current.compat.append(' '.join(("U+" + s if UNICODE_RE.search(s) else s) for s in line[3:].split(' ') if re.match('^([0-9A-F]+|<.*>)$', s)).replace('\'', '"'))
                 else:
                     if current is not None:
                         current.update()
@@ -129,4 +131,4 @@ for fp in sorted(find_files_by_extension(NAME_LIST_PATH, ".txt"), key=lambda v: 
                 current.update()
 
 
-json.dump(characters, open(OUT_PATH, "w"), cls=CharacterEncoder, indent=2)
+json.dump(characters, open(OUT_PATH, "w"), cls=CharacterEncoder, indent=2, ensure_ascii=False)
