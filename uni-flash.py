@@ -522,7 +522,7 @@ def generate_a_image(w, h, _code,
     block_en = auto_width(r[2], n_font, (w - utf8_width)/2)
     bbox = draw.textbbox(xy=(0, 0), text=block_en, font=be_font)
     block_en_height = bbox[3] - bbox[1]
-    block_en_y = h - block_en_height*1.25 - 5
+    block_en_y = h - block_en_height - ((_b := be_font.getbbox("a"))[3] - _b[1])*0.5 - 5
     draw.text((35, block_en_y), block_en, font=be_font, fill=textc)
     
     bbox = b_font.getbbox(r[0])
@@ -542,24 +542,81 @@ def generate_a_image(w, h, _code,
     
     alias = ", ".join(get_char_alias(_code))
     if alias:
-        alias = auto_width("aliases: " + alias, n_font, w-35)
+        alias = auto_width("alias: " + alias, i_font, w-35)
+        bbox = draw.textbbox(xy=(0, 0), text=alias, font=i_font)
+        alias_height = bbox[3] - bbox[1]
+        draw.text((35, 5), alias, font=i_font, fill=textc)
     else:
-        alias = "aliases: <no aliases>"
-    bbox = draw.textbbox(xy=(0, 0), text=alias, font=i_font)
-    alias_height = bbox[3] - bbox[1]
-    draw.text((35, 5), alias, font=i_font, fill=textc)
+        alias_height = 0
         
+    formal_alias = ", ".join(NAME_LIST.get(str(_code), {"formal alias": []})['formal alias'])
+    if formal_alias:
+        formal_alias = auto_width("formal alias: " + formal_alias, i_font, w-35)
+        bbox = draw.textbbox(xy=(0, 0), text=formal_alias, font=i_font)
+        formal_alias_height = bbox[3] - bbox[1]
+        formal_alias_y = alias_height + 10
+        draw.text((35, formal_alias_y), formal_alias, font=i_font, fill=textc)
+    else:
+        formal_alias_height = 0
+        formal_alias_y = alias_height + 5
+    
     comment = ".".join(get_char_comment(_code))
     if comment:
-        comment = auto_width("comment: " + comment + ".", n_font, w-35)
+        comment = auto_width("comment: " + comment + ".", i_font, w-35)
+        bbox = draw.textbbox(xy=(0, 0), text=comment, font=i_font)
+        comment_height = bbox[3] - bbox[1]
+        comment_y = formal_alias_height + formal_alias_y + 5
+        draw.text((35, comment_y), comment, font=i_font, fill=textc)
     else:
-        comment = "comment: <no comment>"
-    bbox = draw.textbbox(xy=(0, 0), text=comment, font=i_font)
-    comment_height = bbox[3] - bbox[1]
-    draw.text((35, alias_height + 10), comment, font=i_font, fill=textc)
+        comment_height = 0
+        comment_y = formal_alias_height + formal_alias_y
+    
+    cross_ref = ", ".join(NAME_LIST.get(str(_code), {"cross ref": []})['cross ref'])
+    if cross_ref:
+        cross_ref = auto_width("cross ref: " + cross_ref, i_font, w-35)
+        bbox = draw.textbbox(xy=(0, 0), text=cross_ref, font=i_font)
+        cross_ref_height = bbox[3] - bbox[1]
+        cross_ref_y = comment_y + comment_height + 5
+        draw.text((35, cross_ref_y), cross_ref, font=i_font, fill=textc)
+    else:
+        cross_ref_height = 0
+        cross_ref_y = comment_y + comment_height
+    
+    variation = ", ".join(NAME_LIST.get(str(_code), {"variation": []})['variation'])
+    if variation:
+        variation = auto_width("variation: " + variation, i_font, w-35)
+        bbox = draw.textbbox(xy=(0, 0), text=variation, font=i_font)
+        variation_height = bbox[3] - bbox[1]
+        variation_y = cross_ref_y + cross_ref_height + 5
+        draw.text((35, variation_y), variation, font=i_font, fill=textc)
+    else:
+        variation_height = 0
+        variation_y = cross_ref_y + cross_ref_height
+    
+    decomposition = ", ".join(NAME_LIST.get(str(_code), {"decomposition": []})['decomposition'])
+    if decomposition:
+        decomposition = auto_width("decomposition: " + decomposition, i_font, w-35)
+        bbox = draw.textbbox(xy=(0, 0), text=decomposition, font=i_font)
+        decomposition_height = bbox[3] - bbox[1]
+        decomposition_y = variation_y + variation_height + 5
+        draw.text((35, decomposition_y), decomposition, font=i_font, fill=textc)
+    else:
+        decomposition_height = 0
+        decomposition_y = variation_y + variation_height
+    
+    compat_mapping = ", ".join(NAME_LIST.get(str(_code), {"compat mapping": []})['compat mapping'])
+    if compat_mapping:
+        compat_mapping = auto_width("compat mapping: " + compat_mapping, i_font, w-35)
+        bbox = draw.textbbox(xy=(0, 0), text=compat_mapping, font=i_font)
+        compat_mapping_height = bbox[3] - bbox[1]
+        compat_mapping_y = decomposition_height + decomposition_y + 5
+        draw.text((35, compat_mapping_y), compat_mapping, font=i_font, fill=textc)
+    else:
+        compat_mapping_height = 0
+        compat_mapping_y = decomposition_height + decomposition_y
     
     version = "version: " + get_char_version(_code)
-    draw.text((35, alias_height + comment_height + 15), version, font=i_font, fill=textc)
+    draw.text((35, compat_mapping_y + compat_mapping_height + 5), version, font=i_font, fill=textc)
     
     if (is_defined(_code) and not is_private_use(_code)) or use_last:
         bbox = font.getbbox(text)
