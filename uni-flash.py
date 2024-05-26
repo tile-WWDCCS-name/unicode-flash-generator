@@ -16,7 +16,6 @@ CUR_FOLDER = os.path.split(__file__)[0]
 
 NOT_CHAR = [0xFFFE, 0xFFFF, 0x1FFFE, 0x1FFFF, 0x2FFFE, 0x2FFFF, 0x3FFFE, 0x3FFFF, 0x4FFFE, 0x4FFFF, 0x5FFFE, 0x5FFFF, 0x6FFFE, 0x6FFFF, 0x7FFFE, 0x7FFFF, 0x8FFFE, 0x8FFFF, 0x9FFFE, 0x9FFFF, 0xAFFFE, 0xAFFFF, 0xBFFFE, 0xBFFFF, 0xCFFFE, 0xCFFFF, 0xDFFFE, 0xDFFFF, 0xEFFFE, 0xEFFFF, 0xFFFFE, 0xFFFFF, 0x10FFFE, 0x10FFFF]
 NOT_CHAR.extend(range(0xFDD0, 0xFDF0))
-#CTRL_CHAR = (0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x7F, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x8D, 0x8E, 0x8F, 0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0x9A, 0x9B, 0x9C, 0x9D, 0x9E, 0x9F)
 HIDDEN_CHAR = set(
     [i for i in range(0x21)]  +
     [i for i in range(0x7F, 0xA1)] +
@@ -50,6 +49,10 @@ with open(os.path.join(CUR_FOLDER, "Blocks.csv"), encoding="utf-8") as blocks_cs
     reader = csv.reader(blocks_csv, delimiter='|')
     BLOCKS = {tuple(map(lambda rang: int(rang, 16), line[0].split(".."))): (line[2], "-".join(map(lambda rang: "U+" + rang, line[0].split(".."))), line[-1]) for line in reader}.items()
 
+with open(os.path.join(CUR_FOLDER, "Planes.csv"), encoding="utf-8") as blocks_csv:
+    reader = csv.reader(blocks_csv, delimiter='|')
+    PLANES = {tuple(map(lambda rang: int(rang, 16), line[0].split(".."))): (*line[1:], "-".join(map(lambda rang: "U+" + rang, line[0].split("..")))) for line in reader}.items()
+
 def get_font_cn_name(names):
     for name in names:
         if name.nameID == 4:
@@ -79,6 +82,7 @@ name_font_path = os.path.join(CUR_FOLDER, "AlibabaPuHuiTi-3-55-Regular.ttf")
 hex_font_path = os.path.join(CUR_FOLDER, "monaco.ttf")
 font_name_font_path = os.path.join(CUR_FOLDER, "AlibabaPuHuiTi-3-55-Regular.ttf")
 info_font_path = os.path.join(CUR_FOLDER, "AlibabaPuHuiTi-3-55-Regular.ttf")
+plane_font_path = os.path.join(CUR_FOLDER, "AlibabaPuHuiTi-3-55-Regular.ttf")
 other_font_path = os.path.join(CUR_FOLDER, "AlibabaPuHuiTi-3-55-Regular.ttf")
 
 tfont_times = TTFont(font_path_times)
@@ -386,7 +390,7 @@ bgcs = tuple(map(
     ]
 ))
 def generate_a_image(w, h, _code,
-                     c_font, b_font, be_font, o_font, r_font, h_font, n_font, fn_font, i_font,
+                     c_font, b_font, be_font, o_font, r_font, h_font, n_font, fn_font, i_font, p_font,
                      fonts, use_last, show_private, skip_no_glyph, skip_undefined, show_undefined, skip_long):
     if (skip_long and 0x323B0 <= _code <= 0xDFFFF) or (skip_undefined and not is_defined(_code)):
         return "skip"
@@ -480,7 +484,6 @@ def generate_a_image(w, h, _code,
         font_name = font_name_last
     else:
         font_name = "no font"
-    
     code = "U+" + hex(_code)[2:].upper().zfill(4)
     image = Image.new(mode, (w, h), color=bgc)
 
@@ -558,14 +561,13 @@ def generate_a_image(w, h, _code,
     version = "version: " + get_char_version(_code)
     draw.text((35, alias_height + comment_height + 15), version, font=i_font, fill=textc)
     
-    if (is_defined(_code) and (not is_private_use(_code))) or use_last:
-        if font is not None:
-            bbox = font.getbbox(text)
-            text_width = bbox[2] - bbox[0]
-            text_height = bbox[3] - bbox[1]
-            x = w/2 - text_width/2
-            y = h/2 - text_height/2
-            draw.text((x, y), text, font=font, fill=textc)
+    if (is_defined(_code) and not is_private_use(_code)) or use_last:
+        bbox = font.getbbox(text)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
+        x = w/2 - text_width/2
+        y = h/2 - text_height/2
+        draw.text((x, y), text, font=font, fill=textc)
     elif show_private and font is not None and is_private_use(_code):
         bbox = font.getbbox(text)
         text_width = bbox[2] - bbox[0]
@@ -601,11 +603,40 @@ def generate_a_image(w, h, _code,
         x = w/2 - text_width/2
         y = h/2 - text_height/2
         draw.text((x, y), text, font=o_font, fill=textc)
+    
+    for index, item in enumerate(PLANES):
+        if item[0][0] <= _code <= item[0][1]:
+            plane = item[1]
+            break
+    
+    plane_num, plane_en, plane_cn = f"{plane[0]}({plane[1]})", plane[2], plane[3]
+    
+    bbox = p_font.getbbox(plane_en)
+    plane_en_width = bbox[2] - bbox[0]
+    plane_en_height = bbox[3] - bbox[1]
+    plane_en_x = w - plane_en_width - 15
+    plane_en_y = h/2 - plane_en_height/2
+    draw.text((plane_en_x, plane_en_y), plane_en, font=p_font, fill=textc)
+    
+    bbox = p_font.getbbox(plane_num)
+    plane_num_width = bbox[2] - bbox[0]
+    plane_num_height = bbox[3] - bbox[1]
+    plane_num_x = w - plane_num_width - 15
+    plane_num_y = plane_en_y - plane_num_height - 5
+    draw.text((plane_num_x, plane_num_y), plane_num, font=p_font, fill=textc)
+    
+    bbox = p_font.getbbox(plane_cn)
+    plane_cn_width = bbox[2] - bbox[0]
+    plane_cn_height = bbox[3] - bbox[1]
+    plane_cn_x = w - plane_cn_width - 15
+    plane_cn_y = plane_num_y + plane_cn_height + plane_num_height + 5
+    draw.text((plane_cn_x, plane_cn_y), plane_cn, font=p_font, fill=textc)
+    
     return image
 
 
 def generate_unicode_flash(width, height, out_path, codes, fps, _fonts,
-                           c_font, b_font, be_font, o_font, r_font, h_font, n_font, fn_font, i_font,
+                           c_font, b_font, be_font, o_font, r_font, h_font, n_font, fn_font, i_font, p_font,
                            use_last, no_dynamic, show_private, no_music, skip_no_glyph, skip_undefined, save_bmp, show_undefined, skip_long, music):
     fonts = tuple(zip(map(lambda f: ImageFont.truetype(f, EXAMPLE_FONT_SIZE), _fonts), map(lambda f: TTFont(f)["cmap"].tables, _fonts), map(lambda f: get_font_cn_name(TTFont(f)['name'].names), _fonts)))
     a = []
@@ -621,7 +652,7 @@ def generate_unicode_flash(width, height, out_path, codes, fps, _fonts,
         for code in tqdm(codes):
             try:
                 image = generate_a_image(width, height, code,
-                                         c_font, b_font, be_font, o_font, r_font, h_font, n_font, fn_font, i_font,
+                                         c_font, b_font, be_font, o_font, r_font, h_font, n_font, fn_font, i_font, p_font,
                                          fonts, use_last, show_private, skip_no_glyph, skip_undefined, show_undefined, skip_long)
             except OSError:
                 print(f"在U+{hex(code)[2:].upper().zfill(4)}处发生raster overflow，已跳过。")
@@ -672,6 +703,7 @@ if __name__ == "__main__":
     n_font = ImageFont.truetype(name_font_path, 30)
     fn_font = ImageFont.truetype(font_name_font_path, 40)
     i_font = ImageFont.truetype(info_font_path, 30)
+    p_font = ImageFont.truetype(plane_font_path, 30)
     
     parser = argparse.ArgumentParser(description="这是一个Unicode快闪生成脚本")
     parser.add_argument('fps', type=float,
@@ -723,5 +755,5 @@ if __name__ == "__main__":
     elif args.from_font:
         codes = sorted(list(set(merge_iterables(*[get_all_codes_from_font(font) for font in args.fonts]))))
     generate_unicode_flash(args.width, args.height, args.out_path, codes, args.fps, args.fonts,
-                           c_font, b_font, be_font, o_font, r_font, h_font, n_font, fn_font, i_font,
+                           c_font, b_font, be_font, o_font, r_font, h_font, n_font, fn_font, i_font, p_font,
                            args.use_last, args.no_dynamic, args.show_private, args.no_music, args.skip_no_glyph, args.skip_undefined, args.save_bmp, args.show_undefined, args.skip_long, args.music)

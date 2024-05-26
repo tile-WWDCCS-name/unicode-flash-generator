@@ -1,0 +1,17 @@
+0000..FFFF|Plane 0|BMP|Basic Multilingual Plane|基本多文种平面
+10000..1FFFF|Plane 1|SMP|Supplementary Multilingual Plane|增补多文种平面
+20000..2FFFF|Plane 2|SIP|Supplementary Ideographic Plane|增补表意平面
+30000..3FFFF|Plane 3|TIP|Tertiary Ideographic Plane|第三表意平面
+40000..4FFFF|Plane 4|UP|Undefined Plane|未定义平面
+50000..5FFFF|Plane 5|UP|Undefined Plane|未定义平面
+60000..6FFFF|Plane 6|UP|Undefined Plane|未定义平面
+70000..7FFFF|Plane 7|UP|Undefined Plane|未定义平面
+80000..8FFFF|Plane 8|UP|Undefined Plane|未定义平面
+90000..9FFFF|Plane 9|UP|Undefined Plane|未定义平面
+A0000..AFFFF|Plane 10|UP|Undefined Plane|未定义平面
+B0000..BFFFF|Plane 11|UP|Undefined Plane|未定义平面
+C0000..CFFFF|Plane 12|UP|Undefined Plane|未定义平面
+D0000..DFFFF|Plane 13|UP|Undefined Plane|未定义平面
+E0000..EFFFF|Plane 14|SSP|Supplementary Special-purpose Plane|增补殊用平面
+F0000..FFFFF|Plane 15|SPUA-A|Supplementary Private Use Area-A|增补私用区甲
+100000..10FFFF|Plane 16|SPUA-B|Supplementary Private Use Area-B|增补私用区乙
