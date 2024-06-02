@@ -53,7 +53,7 @@ with open(os.path.join(CUR_FOLDER, "Planes.csv"), encoding="utf-8") as blocks_cs
     reader = csv.reader(blocks_csv, delimiter='|')
     PLANES = {tuple(map(lambda rang: int(rang, 16), line[0].split(".."))): (*line[1:], "-".join(map(lambda rang: "U+" + rang, line[0].split("..")))) for line in reader}.items()
 
-def get_font_cn_name(names):
+def get_font_name(names):
     for name in names:
         if name.nameID == 4:
             return name.string.decode("UTF-8")
@@ -71,8 +71,9 @@ font_path_p2 = os.path.join(CUR_FOLDER, "PlangothicP2-Regular.ttf")
 font_path_mh = os.path.join(CUR_FOLDER, "MonuHani-9.69.ttf")
 font_path_ctrl = os.path.join(CUR_FOLDER, "CtrlCtrl-1.101.ttf")
 font_path_mht = os.path.join(CUR_FOLDER, "MonuHanp-3.001.ttf")
-font_path_last = os.path.join(CUR_FOLDER, "MonuLast-8.16-1.ttf")
+font_path_mlst = os.path.join(CUR_FOLDER, "MonuLast-8.16-1.ttf")
 font_path_noto = os.path.join(CUR_FOLDER, "NotoUnicode-7.3.ttf")
+font_path_last = os.path.join(CUR_FOLDER, "LastResort-Regular.ttf")
 
 block_name_font_path = os.path.join(CUR_FOLDER, "AlibabaPuHuiTi-3-55-Regular.ttf")
 block_name_en_font_path = os.path.join(CUR_FOLDER, "AlibabaPuHuiTi-3-55-Regular.ttf")
@@ -93,8 +94,9 @@ tfont_p2 = TTFont(font_path_p2)
 tfont_mh = TTFont(font_path_mh)
 tfont_ctrl = TTFont(font_path_ctrl)
 tfont_mht = TTFont(font_path_mht)
-tfont_last = TTFont(font_path_last)
+tfont_mlst = TTFont(font_path_mlst)
 tfont_noto = TTFont(font_path_noto)
+tfont_last = TTFont(font_path_last)
 
 font_cmap_times = tfont_times["cmap"].tables
 font_cmap_kr = tfont_kr["cmap"].tables
@@ -111,19 +113,21 @@ font_p2 = ImageFont.truetype(font_path_p2, EXAMPLE_FONT_SIZE)
 font_mh = ImageFont.truetype(font_path_mh, EXAMPLE_FONT_SIZE)
 font_ctrl = ImageFont.truetype(font_path_ctrl, EXAMPLE_FONT_SIZE)
 font_mht = ImageFont.truetype(font_path_mht, EXAMPLE_FONT_SIZE)
-font_last = ImageFont.truetype(font_path_last, EXAMPLE_FONT_SIZE)
+font_mlst = ImageFont.truetype(font_path_mlst, EXAMPLE_FONT_SIZE)
 font_noto = ImageFont.truetype(font_path_noto, EXAMPLE_FONT_SIZE)
+font_last = ImageFont.truetype(font_path_last, EXAMPLE_FONT_SIZE)
 
-font_name_times = get_font_cn_name(tfont_times['name'].names)
-font_name_kr = get_font_cn_name(tfont_kr['name'].names)
-font_name_d0 = get_font_cn_name(tfont_d0['name'].names)
-font_name_p1 = get_font_cn_name(tfont_p1['name'].names)
-font_name_p2 = get_font_cn_name(tfont_p2['name'].names)
-font_name_mh = get_font_cn_name(tfont_mh['name'].names)
-font_name_ctrl = get_font_cn_name(tfont_ctrl['name'].names)
-font_name_mht = get_font_cn_name(tfont_mht['name'].names)
-font_name_last = get_font_cn_name(tfont_last['name'].names)
-font_name_noto = get_font_cn_name(tfont_noto['name'].names)
+font_name_times = get_font_name(tfont_times['name'].names)
+font_name_kr = get_font_name(tfont_kr['name'].names)
+font_name_d0 = get_font_name(tfont_d0['name'].names)
+font_name_p1 = get_font_name(tfont_p1['name'].names)
+font_name_p2 = get_font_name(tfont_p2['name'].names)
+font_name_mh = get_font_name(tfont_mh['name'].names)
+font_name_ctrl = get_font_name(tfont_ctrl['name'].names)
+font_name_mht = get_font_name(tfont_mht['name'].names)
+font_name_mlst = get_font_name(tfont_mlst['name'].names)
+font_name_noto = get_font_name(tfont_noto['name'].names)
+font_name_last = get_font_name(tfont_last['name'].names)
 
 def merge_iterables(*iterables):
     result_list = []
@@ -391,7 +395,7 @@ bgcs = tuple(map(
 ))
 def generate_a_image(w, h, _code,
                      c_font, b_font, be_font, o_font, r_font, h_font, n_font, fn_font, i_font, p_font,
-                     fonts, use_last, show_private, skip_no_glyph, skip_undefined, show_undefined, skip_long):
+                     fonts, last_type, show_private, skip_no_glyph, skip_undefined, show_undefined, skip_long):
     if (skip_long and 0x323B0 <= _code <= 0xDFFFF) or (skip_undefined and not is_defined(_code)):
         return "skip"
     font = None
@@ -479,7 +483,10 @@ def generate_a_image(w, h, _code,
     elif check_glyph_in_font(font_cmap_d0, _code):
         font = font_d0
         font_name = font_name_d0
-    elif use_last:
+    elif last_type == 2:
+        font = font_mlst
+        font_name = font_name_mlst
+    elif last_type == 1:
         font = font_last
         font_name = font_name_last
     else:
@@ -618,7 +625,7 @@ def generate_a_image(w, h, _code,
     version = "version: " + get_char_version(_code)
     draw.text((35, compat_mapping_y + compat_mapping_height + 5), version, font=i_font, fill=textc)
     
-    if (is_defined(_code) and not is_private_use(_code)) or use_last:
+    if (is_defined(_code) and not is_private_use(_code)) or last_type:
         bbox = font.getbbox(text)
         text_width = bbox[2] - bbox[0]
         text_height = bbox[3] - bbox[1]
@@ -694,8 +701,8 @@ def generate_a_image(w, h, _code,
 
 def generate_unicode_flash(width, height, out_path, codes, fps, _fonts,
                            c_font, b_font, be_font, o_font, r_font, h_font, n_font, fn_font, i_font, p_font,
-                           use_last, no_dynamic, show_private, no_music, skip_no_glyph, skip_undefined, save_bmp, show_undefined, skip_long, music):
-    fonts = tuple(zip(map(lambda f: ImageFont.truetype(f, EXAMPLE_FONT_SIZE), _fonts), map(lambda f: TTFont(f)["cmap"].tables, _fonts), map(lambda f: get_font_cn_name(TTFont(f)['name'].names), _fonts)))
+                           last_type, no_dynamic, show_private, no_music, skip_no_glyph, skip_undefined, save_bmp, show_undefined, skip_long, music):
+    fonts = tuple(zip(map(lambda f: ImageFont.truetype(f, EXAMPLE_FONT_SIZE), _fonts), map(lambda f: TTFont(f)["cmap"].tables, _fonts), map(lambda f: get_font_name(TTFont(f)['name'].names), _fonts)))
     a = []
     count = 0
     temp_dir = os.path.join(CUR_FOLDER, "res")
@@ -710,7 +717,7 @@ def generate_unicode_flash(width, height, out_path, codes, fps, _fonts,
             try:
                 image = generate_a_image(width, height, code,
                                          c_font, b_font, be_font, o_font, r_font, h_font, n_font, fn_font, i_font, p_font,
-                                         fonts, use_last, show_private, skip_no_glyph, skip_undefined, show_undefined, skip_long)
+                                         fonts, last_type, show_private, skip_no_glyph, skip_undefined, show_undefined, skip_long)
             except OSError:
                 print(f"在U+{hex(code)[2:].upper().zfill(4)}处发生raster overflow，已跳过。")
                 continue
@@ -773,26 +780,30 @@ if __name__ == "__main__":
                         help='字体路径列表，按输入顺序计算优先级')
     parser.add_argument('-out_path', type=str, default=os.path.join(CUR_FOLDER, "res.mp4"),
                         help="生成视频的路径")
-    parser.add_argument('-use_last', action='store_true',
-                        help="使用MonuLast(典迹末境)字体")
     parser.add_argument('-no_dynamic', action='store_true',
                         help='以静态图片模式保存临时图片')
     parser.add_argument('-show_private', action='store_true',
                         help='展示私用区字符')
-    parser.add_argument('-show_undefined', action='store_true',
-                        help='展示在自定义字体中有字形的未定义字符')
     parser.add_argument('-no_music', action='store_true',
                         help='不添加音乐')
     parser.add_argument('-skip_no_glyph', action='store_true',
                         help='跳过在所有自定义字体中都没有字形的字符')
-    parser.add_argument('-skip_undefined', action='store_true',
-                        help='跳过未定义字符、非字符、代理字符等')
     parser.add_argument('-skip_long', action='store_true',
                         help='跳过U+323B0-U+DFFFF')
     parser.add_argument('-music', type=str, default=os.path.join(CUR_FOLDER, "UFM.mp3"),
                         help='背景音乐文件路径')
     parser.add_argument('-save_bmp', action='store_true',
                         help='存为bmp格式，仅在-no_dynamic启用时生效，能大幅增加生成速度，但有更大概率抛出OSError: raster overflow错误。')
+    undef_group = parser.add_mutually_exclusive_group()
+    undef_group.add_argument('-skip_undefined', action='store_true',
+                        help='跳过未定义字符、非字符、代理字符等')
+    undef_group.add_argument('-show_undefined', action='store_true',
+                        help='展示在自定义字体中有字形的未定义字符、非字符、代理字符等')
+    last_group = parser.add_mutually_exclusive_group()
+    last_group.add_argument('-use_mlst', action='store_true',
+                        help="使用MonuLast(典迹末境)字体")
+    last_group.add_argument('-use_last', action='store_true',
+                        help="使用LastResort(最后手段)字体")
     chars_group = parser.add_mutually_exclusive_group(required=True)
     chars_group.add_argument('-rang', type=str, nargs=2,
                             help='快闪字符的范围，不带0x的十六进制数')
@@ -813,4 +824,4 @@ if __name__ == "__main__":
         codes = sorted(list(set(merge_iterables(*[get_all_codes_from_font(font) for font in args.fonts]))))
     generate_unicode_flash(args.width, args.height, args.out_path, codes, args.fps, args.fonts,
                            c_font, b_font, be_font, o_font, r_font, h_font, n_font, fn_font, i_font, p_font,
-                           args.use_last, args.no_dynamic, args.show_private, args.no_music, args.skip_no_glyph, args.skip_undefined, args.save_bmp, args.show_undefined, args.skip_long, args.music)
+                           (1 if args.use_last else 2 if args.use_mlst else 0), args.no_dynamic, args.show_private, args.no_music, args.skip_no_glyph, args.skip_undefined, args.save_bmp, args.show_undefined, args.skip_long, args.music)
