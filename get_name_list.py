@@ -30,4 +30,3 @@ for version in tqdm.tqdm(UNICODE_VERSIONS):
     url = f"https://www.unicode.org/Public/{version}/ucd/NamesList.txt"
     r = requests.get(url)
     open(os.path.join(NAME_LIST_PATH, f"{version}.txt"), "w").write(r.text)
-    

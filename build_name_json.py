@@ -11,7 +11,6 @@ CTRL_NAME = {
 def edit_reserved(o):
     return f"<reserved - U+{hex(o.id)[2:].upper().zfill(4)}, original U+{o.xref[0]}>"
 
-
 UNICODE_RE = re.compile(r"^([0-9a-fA-F]|10)?[0-9a-fA-F]{0,4}$")
 
 characters = {}
@@ -53,7 +52,6 @@ class OneCharacter:
             print(exp)
             raise
 
-
 class CharacterEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, OneCharacter):
@@ -69,14 +67,12 @@ class CharacterEncoder(json.JSONEncoder):
                     "compat mapping": obj.compat}
         return super().default(obj)
 
-
 def find_files_by_extension(directory, extension):
     file_list = []
     for file in os.listdir(directory):
         if file.endswith(extension):
             file_list.append(os.path.join(directory, file))
     return file_list
-
 
 for fp in sorted(find_files_by_extension(NAME_LIST_PATH, ".txt"), key=lambda v: int(os.path.splitext(os.path.split(v)[1])[0].replace(".", ""))):
     version = os.path.splitext(os.path.split(fp)[1])[0]
@@ -129,6 +125,5 @@ for fp in sorted(find_files_by_extension(NAME_LIST_PATH, ".txt"), key=lambda v: 
             oneline(line.replace("\n", ""))
             if current is not None:
                 current.update()
-
 
 json.dump(characters, open(OUT_PATH, "w"), cls=CharacterEncoder, indent=2, ensure_ascii=False)

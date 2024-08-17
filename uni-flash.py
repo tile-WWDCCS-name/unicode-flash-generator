@@ -58,7 +58,6 @@ def get_font_name(names):
         if name.nameID == 4:
             return name.string.decode("UTF-8")
 
-
 NAME_LIST = json.load(open(os.path.join(CUR_FOLDER, "NameList.json"), encoding="utf8"))
 DEFINED_CHARACTER_LIST = set(json.load(open(os.path.join(CUR_FOLDER, "DefinedCharacterList.json"), encoding="utf8")))
 EXAMPLE_FONT_SIZE = 220
@@ -135,12 +134,10 @@ def merge_iterables(*iterables):
         result_list.extend(subiterable)
     return result_list
 
-
 def get_all_codes_from_font(fp):
     font = TTFont(fp)
     codes = sorted(list(set(merge_iterables(*map(lambda table: list(table.cmap.keys()), font["cmap"].tables)))))
     return codes
-
 
 def check_glyph_in_font(font_cmap, code):
     for table in font_cmap:
@@ -148,10 +145,9 @@ def check_glyph_in_font(font_cmap, code):
             return True
     return False
 
-
 def get_char_name(code):
     code_u = "U+" + hex(code)[2:].upper()
-    
+
     if code in NOT_CHAR:
         return f"<not a character-{code_u}>"
     if 0xD800 <= code <= 0xDFFF:
@@ -179,14 +175,11 @@ def get_char_name(code):
         return f"Tangut-{code_u}"
     return NAME_LIST.get(str(code), {"name": f"<undefined character-{code_u}>"})['name']
 
-
 def get_char_alias(code):
     return NAME_LIST.get(str(code), {"alias": []})['alias']
 
-
 def get_char_comment(code):
     return NAME_LIST.get(str(code), {"comment": []})['comment']
-
 
 def get_char_version(code):
     if (0xE000 <= code <= 0xF8FF or
@@ -234,7 +227,6 @@ def get_char_version(code):
         return "15.1.0"
     return NAME_LIST.get(str(code), {"version": "<future version>"})['version']
 
-
 def is_defined(code):
     if (code in DEFINED_CHARACTER_LIST or
        0xE000 <= code <= 0xF8FF or
@@ -243,7 +235,6 @@ def is_defined(code):
         return True
     return False
 
-
 def is_private_use(code):
     if (0xE000 <= code <= 0xF8FF or
        0xF0000 <= code <= 0xFFFFD or
@@ -251,27 +242,24 @@ def is_private_use(code):
         return True
     return False
 
-
 def inverse_color(c):
     return (255 - c[0], 255 - c[1], 255 - c[2])
 
-
 def gray(c):
     return ((_l := int(c[0] * 0.299 + c[1] * 0.587 + c[2] * 0.114)), _l, _l)
-
 
 def auto_width(string, font, width):
     char_widths = [(bbox := font.getbbox(char))[2] - bbox[0] for char in string]
     current_width = 0
     processed_string = ''
-    
+
     if (bbox := font.getbbox(string))[2] - bbox[0] <= width:
         return string
 
     for i in range(len(string)):
         char = string[i]
         char_width = char_widths[i]
-        
+
         if char == ' ' and current_width + char_width > width:
             processed_string += '\n  '
             current_width = (bbox := font.getbbox("  "))[2] - bbox[0]
@@ -286,7 +274,6 @@ def auto_width(string, font, width):
             processed_string += char
             current_width += char_width
     return processed_string
-
 
 def to_utf8_hex(code):
     if 0 <= code <= 0x7F:
@@ -310,7 +297,6 @@ def to_utf8_hex(code):
             ((code & 0b111111) + 0b10000000)
         )[2:].upper()
 
-
 def to_utf16be_hex(code):
     if 0 <= code <= 0xFFFF:
         return hex(code)[2:].upper().zfill(4)
@@ -319,7 +305,6 @@ def to_utf16be_hex(code):
             ((((code - 0x10000) >> 10) + 0xD800) << 16) + 
             (((code - 0x10000) & 0b1111111111) + 0xDC00)
         )[2:].upper().zfill(8)
-
 
 def to_utf16le_hex(code):
     if 0 <= code <= 0xFFFF:
@@ -331,7 +316,6 @@ def to_utf16le_hex(code):
             (((code - 0x10000) & 0b1111111111) + 0xDC00)
         )[2:].upper().zfill(8)
         return be[2:4] + be[:2] + be[6:8] + be[4:6]
-
 
 def gap(s):
     return " ".join([s[i:i+2] for i in range(0, len(s), 2)])
@@ -361,7 +345,6 @@ def is_vari_viram_punctuation(code):
     if code in vari_viram_punctuation4 or code in vari_viram_punctuation5:
         return True
     return False
-
 
 bc = 0
 bgcs = tuple(map(
@@ -431,9 +414,9 @@ def generate_a_image(w, h, _code,
     utf8 = "UTF-8: " + gap(to_utf8_hex(_code))
     utf16le = "UTF-16LE: " + gap(to_utf16le_hex(_code))
     utf16be = "UTF-16BE: " + gap(to_utf16be_hex(_code))
-    
+
     mode = "RGB" if bc else "L"
-    
+
     if not bc:
         bgc = 20
         textc = 235
@@ -447,7 +430,7 @@ def generate_a_image(w, h, _code,
     else:
         if bc:
             bgc, textc = ((20, 20, 20), (235, 235, 235))
-    
+
     if font is not None:
         ...
     elif _code in HIDDEN_CHAR:
@@ -495,32 +478,32 @@ def generate_a_image(w, h, _code,
     image = Image.new(mode, (w, h), color=bgc)
 
     draw = ImageDraw.Draw(image)
-    
+
     bbox = c_font.getbbox(code)
     code_width = bbox[2] - bbox[0]
     code_height = bbox[3] - bbox[1]
     code_x = w - code_width - 15
     code_y = h - code_height*1.5 - 5
     draw.text((code_x, code_y), code, font=c_font, fill=textc)
-    
+
     fn = "字体：" + font_name
     bbox = fn_font.getbbox(fn)
     fn_width = bbox[2] - bbox[0]
     fn_height = bbox[3] - bbox[1]
     draw.text((w - fn_width - 15, code_y - fn_height - 5), fn, font=fn_font, fill=textc)
-    
+
     bbox = h_font.getbbox(utf8)
     utf8_width = bbox[2] - bbox[0]
     utf8_height = bbox[3] - bbox[1]
     utf8_y = h - utf8_height*1.5 - 5
     draw.text(((w - utf8_width)/2, utf8_y), utf8, fill=textc, font=h_font)
-    
+
     bbox = h_font.getbbox(utf16le)
     utf16le_width = bbox[2] - bbox[0]
     utf16le_height = bbox[3] - bbox[1]
     utf16le_y = utf8_y - utf16le_height*1.5 - 5
     draw.text(((w - utf16le_width)/2, utf16le_y), utf16le, fill=textc, font=h_font)
-    
+
     bbox = h_font.getbbox(utf16be)
     utf16be_width = bbox[2] - bbox[0]
     utf16be_height = bbox[3] - bbox[1]
@@ -531,7 +514,7 @@ def generate_a_image(w, h, _code,
     block_en_height = bbox[3] - bbox[1]
     block_en_y = h - block_en_height - ((_b := be_font.getbbox("a"))[3] - _b[1])*0.5 - 5
     draw.text((35, block_en_y), block_en, font=be_font, fill=textc)
-    
+
     bbox = b_font.getbbox(r[0])
     block_height = bbox[3] - bbox[1]
     block_y = block_en_y - block_height - 5
@@ -541,12 +524,12 @@ def generate_a_image(w, h, _code,
     r_height = bbox[3] - bbox[1]
     r_y = block_y - r_height - 5
     draw.text((35, r_y), r[1], font=r_font, fill=textc)
-    
+
     name = auto_width(get_char_name(_code), n_font, w - 35)
     bbox = draw.textbbox(xy=(0, 0), text=name, font=n_font)
     name_height = bbox[3] - bbox[1]
     draw.text((35, r_y-name_height-5), name, font=n_font, fill=textc)
-    
+
     alias = ", ".join(get_char_alias(_code))
     if alias:
         alias = auto_width("alias: " + alias, i_font, w-35)
@@ -555,7 +538,7 @@ def generate_a_image(w, h, _code,
         draw.text((35, 5), alias, font=i_font, fill=textc)
     else:
         alias_height = 0
-        
+
     formal_alias = ", ".join(NAME_LIST.get(str(_code), {"formal alias": []})['formal alias'])
     if formal_alias:
         formal_alias = auto_width("formal alias: " + formal_alias, i_font, w-35)
@@ -566,7 +549,7 @@ def generate_a_image(w, h, _code,
     else:
         formal_alias_height = 0
         formal_alias_y = alias_height + 5
-    
+
     comment = ".".join(get_char_comment(_code))
     if comment:
         comment = auto_width("comment: " + comment + ".", i_font, w-35)
@@ -577,7 +560,7 @@ def generate_a_image(w, h, _code,
     else:
         comment_height = 0
         comment_y = formal_alias_height + formal_alias_y
-    
+
     cross_ref = ", ".join(NAME_LIST.get(str(_code), {"cross ref": []})['cross ref'])
     if cross_ref:
         cross_ref = auto_width("cross ref: " + cross_ref, i_font, w-35)
@@ -588,7 +571,7 @@ def generate_a_image(w, h, _code,
     else:
         cross_ref_height = 0
         cross_ref_y = comment_y + comment_height
-    
+
     variation = ", ".join(NAME_LIST.get(str(_code), {"variation": []})['variation'])
     if variation:
         variation = auto_width("variation: " + variation, i_font, w-35)
@@ -599,7 +582,7 @@ def generate_a_image(w, h, _code,
     else:
         variation_height = 0
         variation_y = cross_ref_y + cross_ref_height
-    
+
     decomposition = ", ".join(NAME_LIST.get(str(_code), {"decomposition": []})['decomposition'])
     if decomposition:
         decomposition = auto_width("decomposition: " + decomposition, i_font, w-35)
@@ -610,7 +593,7 @@ def generate_a_image(w, h, _code,
     else:
         decomposition_height = 0
         decomposition_y = variation_y + variation_height
-    
+
     compat_mapping = ", ".join(NAME_LIST.get(str(_code), {"compat mapping": []})['compat mapping'])
     if compat_mapping:
         compat_mapping = auto_width("compat mapping: " + compat_mapping, i_font, w-35)
@@ -621,10 +604,10 @@ def generate_a_image(w, h, _code,
     else:
         compat_mapping_height = 0
         compat_mapping_y = decomposition_height + decomposition_y
-    
+
     version = "version: " + get_char_version(_code)
     draw.text((35, compat_mapping_y + compat_mapping_height + 5), version, font=i_font, fill=textc)
-    
+
     if (is_defined(_code) and not is_private_use(_code)) or last_type:
         bbox = font.getbbox(text)
         text_width = bbox[2] - bbox[0]
@@ -667,37 +650,36 @@ def generate_a_image(w, h, _code,
         x = w/2 - text_width/2
         y = h/2 - text_height/2
         draw.text((x, y), text, font=o_font, fill=textc)
-    
+
     for index, item in enumerate(PLANES):
         if item[0][0] <= _code <= item[0][1]:
             plane = item[1]
             break
-    
+
     plane_num, plane_en, plane_cn = f"{plane[0]}({plane[1]})", plane[2], plane[3]
-    
+
     bbox = p_font.getbbox(plane_en)
     plane_en_width = bbox[2] - bbox[0]
     plane_en_height = bbox[3] - bbox[1]
     plane_en_x = w - plane_en_width - 15
     plane_en_y = h/2 - plane_en_height/2
     draw.text((plane_en_x, plane_en_y), plane_en, font=p_font, fill=textc)
-    
+
     bbox = p_font.getbbox(plane_num)
     plane_num_width = bbox[2] - bbox[0]
     plane_num_height = bbox[3] - bbox[1]
     plane_num_x = w - plane_num_width - 15
     plane_num_y = plane_en_y - plane_num_height - 5
     draw.text((plane_num_x, plane_num_y), plane_num, font=p_font, fill=textc)
-    
+
     bbox = p_font.getbbox(plane_cn)
     plane_cn_width = bbox[2] - bbox[0]
     plane_cn_height = bbox[3] - bbox[1]
     plane_cn_x = w - plane_cn_width - 15
     plane_cn_y = plane_num_y + plane_cn_height + plane_num_height + 5
     draw.text((plane_cn_x, plane_cn_y), plane_cn, font=p_font, fill=textc)
-    
-    return image
 
+    return image
 
 def generate_unicode_flash(width, height, out_path, codes, fps, _fonts,
                            c_font, b_font, be_font, o_font, r_font, h_font, n_font, fn_font, i_font, p_font,
@@ -711,7 +693,7 @@ def generate_unicode_flash(width, height, out_path, codes, fps, _fonts,
     #with tempfile.TemporaryDirectory() as temp_dir:
     print(f"gif dir: {temp_dir}")
     in_p = os.path.join(temp_dir, "input.txt")
-    
+
     with open(in_p, "w", encoding="utf8") as f:
         for code in tqdm(codes):
             try:
@@ -752,11 +734,9 @@ def generate_unicode_flash(width, height, out_path, codes, fps, _fonts,
         os.system(f'ffmpeg -r {fps} -f concat -safe 0 -i {os.path.abspath(in_p)} -pix_fmt yuv420p {os.path.join(temp_dir, "out.mp4")} -hide_banner')
         os.system(f'ffmpeg -i {os.path.join(temp_dir, "out.mp4")} -stream_loop -1 -i {music} -c copy -shortest {os.path.abspath(out_path)} -hide_banner')
 
-
 if __name__ == "__main__":
     def _ve(v):
         raise ValueError(f"无效Unicode码位 {v}")
-
 
     c_font = ImageFont.truetype(code_font_path, 40)
     b_font = ImageFont.truetype(block_name_font_path, 45)
@@ -768,7 +748,7 @@ if __name__ == "__main__":
     fn_font = ImageFont.truetype(font_name_font_path, 40)
     i_font = ImageFont.truetype(info_font_path, 30)
     p_font = ImageFont.truetype(plane_font_path, 30)
-    
+
     parser = argparse.ArgumentParser(description="这是一个Unicode快闪生成脚本")
     parser.add_argument('fps', type=float,
                         help='帧率，建议15，可以为小数')
