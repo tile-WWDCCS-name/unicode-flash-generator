@@ -421,19 +421,20 @@ def generate_a_image(w, h, bar_height, _code,
             bgc, textc = ((20, 20, 20), (235, 235, 235))
 
     if font is None:
-        for cmap, name, main_font in main_fonts:
-            if check_glyph_in_font(cmap, _code):
-                font = main_font
-                font_name = name
-                break
-        else:
-            if is_defined(_code):
-                for subsidiary_font, name, rangs in subsidiary_fonts:
-                    for rang in rangs:
-                        if rang[0] <= _code <= rang[1]:
-                            font = subsidiary_font
-                            font_name = name 
-                            break
+        if (show_private and is_private_use(_code)) or not is_private_use(_code):
+            for cmap, name, main_font in main_fonts:
+                if check_glyph_in_font(cmap, _code):
+                    font = main_font
+                    font_name = name
+                    break
+            else:
+                if is_defined(_code):
+                    for subsidiary_font, name, rangs in subsidiary_fonts:
+                        for rang in rangs:
+                            if rang[0] <= _code <= rang[1]:
+                                font = subsidiary_font
+                                font_name = name 
+                                break
         if font is None:
             if last_type == 2:
                 font = font_mlst
@@ -730,7 +731,7 @@ if __name__ == "__main__":
     parser.add_argument('-no_dynamic', action='store_true',
                         help='以静态图片模式保存临时图片')
     parser.add_argument('-show_private', action='store_true',
-                        help='展示私用区字符')
+                        help='展示在字体中有字形的私用区字符')
     parser.add_argument('-no_music', action='store_true',
                         help='不添加音乐')
     parser.add_argument('-skip_no_glyph', action='store_true',
