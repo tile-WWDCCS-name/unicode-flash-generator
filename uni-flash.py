@@ -54,79 +54,72 @@ with open(os.path.join(CUR_FOLDER, "Planes.csv"), encoding="utf-8") as blocks_cs
     PLANES = {tuple(map(lambda rang: int(rang, 16), line[0].split(".."))): (*line[1:], "-".join(map(lambda rang: "U+" + rang, line[0].split("..")))) for line in reader}.items()
 
 def get_font_name(names):
-    for name in names:
-        if name.nameID == 4:
-            return name.string.decode("UTF-8")
+    for record in names:
+        if record.nameID == 4 and record.langID == 0x404 and record.toUnicode() != '':
+            return record.toStr()
+    for record in names:
+        if record.nameID == 4 and record.toUnicode() != '':
+            return record.toStr()
 
 NAME_LIST = json.load(open(os.path.join(CUR_FOLDER, "NameList.json"), encoding="utf8"))
 DEFINED_CHARACTER_LIST = set(json.load(open(os.path.join(CUR_FOLDER, "DefinedCharacterList.json"), encoding="utf8")))
 EXAMPLE_FONT_SIZE = 220
 
-font_path_times = os.path.join(CUR_FOLDER, "TH-Times.ttf")
-font_path_kr = os.path.join(CUR_FOLDER, "NotoSansKR-Regular.ttf")
-font_path_d0 = os.path.join(CUR_FOLDER, "TH-Disp-P0.ttf")
-font_path_p1 = os.path.join(CUR_FOLDER, "PlangothicP1-Regular(allideo).ttf")
-font_path_p2 = os.path.join(CUR_FOLDER, "PlangothicP2-Regular.ttf")
-font_path_mh = os.path.join(CUR_FOLDER, "MonuHani-9.69.ttf")
-font_path_ctrl = os.path.join(CUR_FOLDER, "CtrlCtrl-1.101.ttf")
-font_path_mht = os.path.join(CUR_FOLDER, "MonuHanp-3.001.ttf")
-font_path_mlst = os.path.join(CUR_FOLDER, "MonuLast-8.16-1.ttf")
-font_path_noto = os.path.join(CUR_FOLDER, "NotoUnicode-7.3.ttf")
-font_path_last = os.path.join(CUR_FOLDER, "LastResort-Regular.ttf")
-
+main_fonts = [
+    os.path.join(CUR_FOLDER, "CtrlCtrl.ttf"),
+    os.path.join(CUR_FOLDER, "NotoUnicode.ttf"),
+    os.path.join(CUR_FOLDER, "MonuHani.ttf"),
+    os.path.join(CUR_FOLDER, "MonuHanp.ttf"),
+    os.path.join(CUR_FOLDER, "MonuHan2.ttf"),
+    os.path.join(CUR_FOLDER, "MonuHan3.ttf"),
+    os.path.join(CUR_FOLDER, "MonuTemp.ttf"),
+    os.path.join(CUR_FOLDER, "NotoSerifTangut.ttf")
+]
+subsidiary_fonts = [
+    (os.path.join(CUR_FOLDER, "SegoeUIHistoric.ttf"), '700..74F,1680..169F,10280..102DF,10330..1034F,10380..1047F,10800..1085F,10900..1093F,10A60..10A7F,10B40..10B7F,10C00..10C4F,12400..1247F'),
+    (os.path.join(CUR_FOLDER, "MVBoli.ttf"), '780..7BF'),
+    (os.path.join(CUR_FOLDER, "Ebrima.ttf"), '7C0..7FF,1200..139F,2D30..2DDF,A500..A63F,AB00..AB2F,10480..104AF,1E900..1E95F'),
+    (os.path.join(CUR_FOLDER, "NirmalaUI.ttf"), 'B80..BFF,1C50..1C7F,ABC0..ABFF,110D0..110FF'),
+    (os.path.join(CUR_FOLDER, "LeelawadeeUI.ttf"), 'E00..E7F,1780..17FF,19E0..1A1F'),
+    (os.path.join(CUR_FOLDER, "MyanmarText.ttf"), '1000..109F,A9E0..A9FF,AA60..AA7F'),
+    (os.path.join(CUR_FOLDER, "Calibri.ttf"), '10A0..10FF,1C90..1CBF,2D00..2D2F'),
+    (os.path.join(CUR_FOLDER, "MalgunGothic.ttf"), '1100..11FF,3130..318F,A960..A97F,AC00..D7FF'),
+    (os.path.join(CUR_FOLDER, "Gadugi.ttf"), '13A0..167F,18B0..18FF,AB70..ABBF,104B0..104FF'),
+    (os.path.join(CUR_FOLDER, "MicrosoftTaiLe.ttf"), '1950..197F'),
+    (os.path.join(CUR_FOLDER, "MicrosoftNewTaiLue.ttf"), '1980..19DF'),
+    (os.path.join(CUR_FOLDER, "SegoeUISymbol.ttf"), '2190..22FF,2400..2AFF,2C80..2CFF,4DC0..4DFF,1D300..1D35F,1D400..1D7FF,1F030..1F0FF,1F650..1F67F'),
+    (os.path.join(CUR_FOLDER, "微软雅黑.ttf"), '3040..30FF,3190..319F,31F0..31FF,FE10..FE1F,FE30..FE6F'),
+    (os.path.join(CUR_FOLDER, "YuGothic.ttf"), '3300..33FF'),
+    (os.path.join(CUR_FOLDER, "MicrosoftYiBaiti.ttf"), 'A000..A4CF'),
+    (os.path.join(CUR_FOLDER, "SegoeUI.ttf"), 'A4D0..A4FF,A700..A71F'),
+    (os.path.join(CUR_FOLDER, "MicrosoftPhagsPa.ttf"), 'A840..A87F'),
+    (os.path.join(CUR_FOLDER, "JavaneseText.ttf"), 'A980..A9DF'),
+    (os.path.join(CUR_FOLDER, "MicrosoftJhengHei.ttf"), 'FF00..FFEF'),
+    (os.path.join(CUR_FOLDER, "SegoeUIEmoji.ttf"), '1F000..1F02F,1F600..1F64F')
+]
 block_name_font_path = os.path.join(CUR_FOLDER, "SarasaGothicSC-Regular.ttf")
 block_name_en_font_path = os.path.join(CUR_FOLDER, "SarasaGothicSC-Regular.ttf")
 range_font_path = os.path.join(CUR_FOLDER, "SarasaGothicSC-Regular.ttf")
 code_font_path = os.path.join(CUR_FOLDER, "monaco.ttf")
 name_font_path = os.path.join(CUR_FOLDER, "SarasaGothicSC-Regular.ttf")
 hex_font_path = os.path.join(CUR_FOLDER, "monaco.ttf")
-font_name_font_path = os.path.join(CUR_FOLDER, "SarasaGothicSC-Regular.ttf")
+font_name_font_path = os.path.join(CUR_FOLDER, "微软雅黑.ttf")
 info_font_path = os.path.join(CUR_FOLDER, "SarasaGothicSC-Regular.ttf")
 plane_font_path = os.path.join(CUR_FOLDER, "SarasaGothicSC-Regular.ttf")
 other_font_path = os.path.join(CUR_FOLDER, "SarasaGothicSC-Regular.ttf")
 
-tfont_times = TTFont(font_path_times)
-tfont_kr = TTFont(font_path_kr)
-tfont_d0 = TTFont(font_path_d0)
-tfont_p1 = TTFont(font_path_p1)
-tfont_p2 = TTFont(font_path_p2)
-tfont_mh = TTFont(font_path_mh)
-tfont_ctrl = TTFont(font_path_ctrl)
-tfont_mht = TTFont(font_path_mht)
+font_path_mlst = os.path.join(CUR_FOLDER, "MonuLast.ttf")
+font_path_last = os.path.join(CUR_FOLDER, "LastResort.ttf")
 tfont_mlst = TTFont(font_path_mlst)
-tfont_noto = TTFont(font_path_noto)
 tfont_last = TTFont(font_path_last)
-
-font_cmap_times = tfont_times["cmap"].tables
-font_cmap_kr = tfont_kr["cmap"].tables
-font_cmap_d0 = tfont_d0["cmap"].tables
-font_cmap_p1 = tfont_p1["cmap"].tables
-font_cmap_p2 = tfont_p2["cmap"].tables
-font_cmap_noto = tfont_noto["cmap"].tables
-
-font_times = ImageFont.truetype(font_path_times, EXAMPLE_FONT_SIZE)
-font_kr = ImageFont.truetype(font_path_kr, EXAMPLE_FONT_SIZE)
-font_d0 = ImageFont.truetype(font_path_d0, EXAMPLE_FONT_SIZE)
-font_p1 = ImageFont.truetype(font_path_p1, EXAMPLE_FONT_SIZE)
-font_p2 = ImageFont.truetype(font_path_p2, EXAMPLE_FONT_SIZE)
-font_mh = ImageFont.truetype(font_path_mh, EXAMPLE_FONT_SIZE)
-font_ctrl = ImageFont.truetype(font_path_ctrl, EXAMPLE_FONT_SIZE)
-font_mht = ImageFont.truetype(font_path_mht, EXAMPLE_FONT_SIZE)
 font_mlst = ImageFont.truetype(font_path_mlst, EXAMPLE_FONT_SIZE)
-font_noto = ImageFont.truetype(font_path_noto, EXAMPLE_FONT_SIZE)
 font_last = ImageFont.truetype(font_path_last, EXAMPLE_FONT_SIZE)
-
-font_name_times = get_font_name(tfont_times['name'].names)
-font_name_kr = get_font_name(tfont_kr['name'].names)
-font_name_d0 = get_font_name(tfont_d0['name'].names)
-font_name_p1 = get_font_name(tfont_p1['name'].names)
-font_name_p2 = get_font_name(tfont_p2['name'].names)
-font_name_mh = get_font_name(tfont_mh['name'].names)
-font_name_ctrl = get_font_name(tfont_ctrl['name'].names)
-font_name_mht = get_font_name(tfont_mht['name'].names)
 font_name_mlst = get_font_name(tfont_mlst['name'].names)
-font_name_noto = get_font_name(tfont_noto['name'].names)
 font_name_last = get_font_name(tfont_last['name'].names)
+
+main_fonts = [(p, TTFont(p)) for p in main_fonts]
+main_fonts = [(tf["cmap"].tables, get_font_name(tf['name'].names), ImageFont.truetype(p, EXAMPLE_FONT_SIZE)) for p, tf in main_fonts]
+subsidiary_fonts = [(ImageFont.truetype(p, EXAMPLE_FONT_SIZE), get_font_name(TTFont(p)['name'].names), list(map(lambda i: tuple(map(lambda j: int(j, 16), i.split('..'))), r.split(',')))) for p, r in subsidiary_fonts]
 
 def merge_iterables(*iterables):
     result_list = []
@@ -391,20 +384,20 @@ def generate_a_image(w, h, bar_height, _code,
         text = "\u240D"
     elif _code in vari_viram_punctuation4:
         text = "\u0964"
-        font = font_noto
-        font_name = font_name_noto
+        font = main_fonts[1][2]
+        font_name = main_fonts[1][1]
     elif _code in vari_viram_punctuation5:
         text = "\u0965"
-        font = font_noto
-        font_name = font_name_noto
+        font = main_fonts[1][2]
+        font_name = main_fonts[1][1]
     elif _code == 0x2072:
         text = "\u00B2"
-        font = font_noto
-        font_name = font_name_noto
+        font = main_fonts[1][2]
+        font_name = main_fonts[1][1]
     elif _code == 0x2073:
         text = "\u00B3"
-        font = font_noto
-        font_name = font_name_noto
+        font = main_fonts[1][2]
+        font_name = main_fonts[1][1]
     else:
         text = chr(_code)
     utf8 = "UTF-8: " + gap(to_utf8_hex(_code))
@@ -427,49 +420,30 @@ def generate_a_image(w, h, bar_height, _code,
         if bc:
             bgc, textc = ((20, 20, 20), (235, 235, 235))
 
-    if font is not None:
-        ...
-    elif _code in HIDDEN_CHAR:
-        font = font_ctrl
-        font_name = font_name_ctrl
-    elif 0x20000 <= _code <= 0x2A6DF:
-        font = font_mht
-        font_name = font_name_mht
-    elif 0x2A700 <= _code <= 0x2FFFF and check_glyph_in_font(font_cmap_p1, _code):
-        font = font_p1
-        font_name = font_name_p1
-    elif 0x30000 <= _code <= 0x3FFFF and check_glyph_in_font(font_cmap_p2, _code):
-        font = font_p2
-        font_name = font_name_p2
-    elif (0x4E00 <= _code <= 0x9FFF or
-          0x2E80 <= _code <= 0x2EF3 or
-          0x2F00 <= _code <= 0x2FD5 or
-          0x2FF0 <= _code <= 0x2FFF or
-          0x31C0 <= _code <= 0x31E3 or
-          _code == 0x31EF or
-          0x3400 <= _code <= 0x4DBF):
-        font = font_mh
-        font_name = font_name_mh
-    elif check_glyph_in_font(font_cmap_kr, _code):
-        font = font_kr
-        font_name = font_name_kr
-    elif check_glyph_in_font(font_cmap_noto, _code):
-        font = font_noto
-        font_name = font_name_noto
-    elif check_glyph_in_font(font_cmap_times, _code):
-        font = font_times
-        font_name = font_name_times
-    elif check_glyph_in_font(font_cmap_d0, _code):
-        font = font_d0
-        font_name = font_name_d0
-    elif last_type == 2:
-        font = font_mlst
-        font_name = font_name_mlst
-    elif last_type == 1:
-        font = font_last
-        font_name = font_name_last
-    else:
-        font_name = "no font"
+    if font is None:
+        for cmap, name, main_font in main_fonts:
+            if check_glyph_in_font(cmap, _code):
+                font = main_font
+                font_name = name
+                break
+        else:
+            if is_defined(_code):
+                for subsidiary_font, name, rangs in subsidiary_fonts:
+                    for rang in rangs:
+                        if rang[0] <= _code <= rang[1]:
+                            font = subsidiary_font
+                            font_name = name 
+                            break
+        if font is None:
+            if last_type == 2:
+                font = font_mlst
+                font_name = font_name_mlst
+            elif last_type == 1:
+                font = font_last
+                font_name = font_name_last
+            else:
+                font_name = "no font"
+
     code = "U+" + hex(_code)[2:].upper().zfill(4)
     image = Image.new(mode, (w, h), color=bgc)
 
@@ -482,7 +456,7 @@ def generate_a_image(w, h, bar_height, _code,
     code_y = h - code_height*1.5 - 5
     draw.text((code_x, code_y), code, font=c_font, fill=textc)
 
-    fn = "字体：" + font_name
+    fn = "字体: " + font_name
     bbox = fn_font.getbbox(fn)
     fn_width = bbox[2] - bbox[0]
     fn_height = bbox[3] - bbox[1]
@@ -534,31 +508,33 @@ def generate_a_image(w, h, bar_height, _code,
         alias = auto_width("alias: " + alias, i_font, w-35)
         bbox = draw.textbbox(xy=(0, 0), text=alias, font=i_font)
         alias_height = bbox[3] - bbox[1]
-        draw.text((35, bar_height + 5), alias, font=i_font, fill=textc)
+        alias_y = bar_height + 5
+        draw.text((35, alias_y), alias, font=i_font, fill=textc)
     else:
         alias_height = 0
+        alias_y = bar_height + 5
 
     formal_alias = ", ".join(NAME_LIST.get(str(_code), {"formal alias": []})['formal alias'])
     if formal_alias:
         formal_alias = auto_width("formal alias: " + formal_alias, i_font, w-35)
         bbox = draw.textbbox(xy=(0, 0), text=formal_alias, font=i_font)
         formal_alias_height = bbox[3] - bbox[1]
-        formal_alias_y = alias_height + 10
-        draw.text((35, bar_height + formal_alias_y), formal_alias, font=i_font, fill=textc)
+        formal_alias_y = alias_y + alias_height + 5
+        draw.text((35, formal_alias_y), formal_alias, font=i_font, fill=textc)
     else:
         formal_alias_height = 0
-        formal_alias_y = alias_height + 5
+        formal_alias_y = alias_y + alias_height
 
     comment = ".".join(get_char_comment(_code))
     if comment:
         comment = auto_width("comment: " + comment + ".", i_font, w-35)
         bbox = draw.textbbox(xy=(0, 0), text=comment, font=i_font)
         comment_height = bbox[3] - bbox[1]
-        comment_y = formal_alias_height + formal_alias_y + 5
-        draw.text((35, bar_height + comment_y), comment, font=i_font, fill=textc)
+        comment_y = formal_alias_y + formal_alias_height + 5
+        draw.text((35, comment_y), comment, font=i_font, fill=textc)
     else:
         comment_height = 0
-        comment_y = formal_alias_height + formal_alias_y
+        comment_y = formal_alias_y + formal_alias_height
 
     cross_ref = ", ".join(NAME_LIST.get(str(_code), {"cross ref": []})['cross ref'])
     if cross_ref:
@@ -566,7 +542,7 @@ def generate_a_image(w, h, bar_height, _code,
         bbox = draw.textbbox(xy=(0, 0), text=cross_ref, font=i_font)
         cross_ref_height = bbox[3] - bbox[1]
         cross_ref_y = comment_y + comment_height + 5
-        draw.text((35, bar_height + cross_ref_y), cross_ref, font=i_font, fill=textc)
+        draw.text((35, cross_ref_y), cross_ref, font=i_font, fill=textc)
     else:
         cross_ref_height = 0
         cross_ref_y = comment_y + comment_height
@@ -577,7 +553,7 @@ def generate_a_image(w, h, bar_height, _code,
         bbox = draw.textbbox(xy=(0, 0), text=variation, font=i_font)
         variation_height = bbox[3] - bbox[1]
         variation_y = cross_ref_y + cross_ref_height + 5
-        draw.text((35, bar_height + variation_y), variation, font=i_font, fill=textc)
+        draw.text((35, variation_y), variation, font=i_font, fill=textc)
     else:
         variation_height = 0
         variation_y = cross_ref_y + cross_ref_height
@@ -588,7 +564,7 @@ def generate_a_image(w, h, bar_height, _code,
         bbox = draw.textbbox(xy=(0, 0), text=decomposition, font=i_font)
         decomposition_height = bbox[3] - bbox[1]
         decomposition_y = variation_y + variation_height + 5
-        draw.text((35, bar_height + decomposition_y), decomposition, font=i_font, fill=textc)
+        draw.text((35, decomposition_y), decomposition, font=i_font, fill=textc)
     else:
         decomposition_height = 0
         decomposition_y = variation_y + variation_height
@@ -598,14 +574,14 @@ def generate_a_image(w, h, bar_height, _code,
         compat_mapping = auto_width("compat mapping: " + compat_mapping, i_font, w-35)
         bbox = draw.textbbox(xy=(0, 0), text=compat_mapping, font=i_font)
         compat_mapping_height = bbox[3] - bbox[1]
-        compat_mapping_y = decomposition_height + decomposition_y + 5
-        draw.text((35, bar_height + compat_mapping_y), compat_mapping, font=i_font, fill=textc)
+        compat_mapping_y = decomposition_y + decomposition_height + 5
+        draw.text((35, compat_mapping_y), compat_mapping, font=i_font, fill=textc)
     else:
         compat_mapping_height = 0
-        compat_mapping_y = decomposition_height + decomposition_y
+        compat_mapping_y = decomposition_y + decomposition_height
 
     version = "version: " + get_char_version(_code)
-    draw.text((35, bar_height + compat_mapping_y + compat_mapping_height + 5), version, font=i_font, fill=textc)
+    draw.text((35, compat_mapping_y + compat_mapping_height + 5), version, font=i_font, fill=textc)
 
     if (is_defined(_code) and not is_private_use(_code)) or last_type:
         bbox = font.getbbox(text)
@@ -701,8 +677,6 @@ def generate_unicode_flash(width, height, bar_height, out_path, codes, fps, _fon
                                          fonts, last_type, show_private, show_undefined)
             except OSError:
                 print(f"在U+{hex(code)[2:].upper().zfill(4)}处发生raster overflow，已跳过。")
-                continue
-            if image == "skip":
                 continue
             if bc or no_dynamic:
                 if save_bmp:
