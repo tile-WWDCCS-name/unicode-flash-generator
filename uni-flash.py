@@ -9,6 +9,8 @@ import tempfile
 import re
 import csv
 import json
+import bisect
+import itertools
 
 UNICODE_RE = re.compile(r"^([0-9a-fA-F]|10)?[0-9a-fA-F]{0,4}$")
 
@@ -46,8 +48,11 @@ HIDDEN_CHAR = set(
 )
 
 with open(os.path.join(CUR_FOLDER, "Blocks.csv"), encoding="utf-8") as blocks_csv:
-    reader = csv.reader(blocks_csv, delimiter='|')
-    blocks = {tuple(map(lambda rang: int(rang, 16), line[0].split(".."))): (line[2], "-".join(map(lambda rang: "U+" + rang, line[0].split(".."))), line[-1]) for line in reader}.items()
+    reader = list(csv.reader(blocks_csv, delimiter='|'))
+    BLOCKS = {tuple(map(lambda rang: int(rang, 16), line[0].split(".."))): (line[2], "-".join(map(lambda rang: "U+" + rang, line[0].split(".."))), line[-1]) for line in reader}.items()
+    block_range_name_map = {tuple(map(lambda rang: int(rang, 16), line[0].split(".."))): line[2] for line in reader}
+    block_start_list = [int(line[0].split('..')[0], 16) for line in reader]
+    blocks_names = list(block_range_name_map.values())
 
 with open(os.path.join(CUR_FOLDER, "Planes.csv"), encoding="utf-8") as blocks_csv:
     reader = csv.reader(blocks_csv, delimiter='|')
@@ -61,6 +66,7 @@ def get_font_name(names):
         if record.nameID == 4 and record.toUnicode() != '':
             return record.toStr()
 
+
 NAME_LIST = json.load(open(os.path.join(CUR_FOLDER, "NameList.json"), encoding="utf8"))
 DEFINED_CHARACTER_LIST = set(json.load(open(os.path.join(CUR_FOLDER, "DefinedCharacterList.json"), encoding="utf8")))
 EXAMPLE_FONT_SIZE = 220
@@ -73,9 +79,9 @@ main_fonts = [
     os.path.join(CUR_FOLDER, "MonuHan2.ttf"),
     os.path.join(CUR_FOLDER, "MonuHan3.ttf"),
     os.path.join(CUR_FOLDER, "MonuTemp.ttf"),
-    os.path.join(CUR_FOLDER, "NotoSerifTangut.ttf")
 ]
 subsidiary_fonts = [
+    (os.path.join(CUR_FOLDER, "NotoSerifTangut.ttf"), '17000..18AFF,18D00..18D7F'),
     (os.path.join(CUR_FOLDER, "SegoeUIHistoric.ttf"), '700..74F,1680..169F,10280..102DF,10330..1034F,10380..1047F,10800..1085F,10900..1093F,10A60..10A7F,10B40..10B7F,10C00..10C4F,12400..1247F'),
     (os.path.join(CUR_FOLDER, "MVBoli.ttf"), '780..7BF'),
     (os.path.join(CUR_FOLDER, "Ebrima.ttf"), '7C0..7FF,1200..139F,2D30..2DDF,A500..A63F,AB00..AB2F,10480..104AF,1E900..1E95F'),
@@ -127,16 +133,19 @@ def merge_iterables(*iterables):
         result_list.extend(subiterable)
     return result_list
 
+
 def get_all_codes_from_font(fp):
     font = TTFont(fp)
     codes = sorted(list(set(merge_iterables(*map(lambda table: list(table.cmap.keys()), font["cmap"].tables)))))
     return codes
+
 
 def check_glyph_in_font(font_cmap, code):
     for table in font_cmap:
         if code in table.cmap:
             return True
     return False
+
 
 def get_char_name(code):
     code_u = "U+" + hex(code)[2:].upper()
@@ -168,11 +177,14 @@ def get_char_name(code):
         return f"Tangut-{code_u}"
     return NAME_LIST.get(str(code), {"name": f"<undefined character-{code_u}>"})['name']
 
+
 def get_char_alias(code):
     return NAME_LIST.get(str(code), {"alias": []})['alias']
 
+
 def get_char_comment(code):
     return NAME_LIST.get(str(code), {"comment": []})['comment']
+
 
 def get_char_version(code):
     if (0xE000 <= code <= 0xF8FF or
@@ -220,6 +232,7 @@ def get_char_version(code):
         return "15.1.0"
     return NAME_LIST.get(str(code), {"version": "<future version>"})['version']
 
+
 def is_defined(code):
     if (code in DEFINED_CHARACTER_LIST or
        0xE000 <= code <= 0xF8FF or
@@ -228,6 +241,7 @@ def is_defined(code):
         return True
     return False
 
+
 def is_private_use(code):
     if (0xE000 <= code <= 0xF8FF or
        0xF0000 <= code <= 0xFFFFD or
@@ -235,11 +249,22 @@ def is_private_use(code):
         return True
     return False
 
+
+def get_block(code):
+    index = bisect.bisect_right(block_start_list, code) - 1
+
+    if index != -1:
+        return blocks_names[index]
+    return None
+
+
 def inverse_color(c):
     return (255 - c[0], 255 - c[1], 255 - c[2])
 
+
 def gray(c):
     return ((_l := int(c[0] * 0.299 + c[1] * 0.587 + c[2] * 0.114)), _l, _l)
+
 
 def auto_width(string, font, width):
     char_widths = [(bbox := font.getbbox(char))[2] - bbox[0] for char in string]
@@ -268,6 +293,7 @@ def auto_width(string, font, width):
             current_width += char_width
     return processed_string
 
+
 def to_utf8_hex(code):
     if 0 <= code <= 0x7F:
         return hex(code)[2:].upper().zfill(2)
@@ -290,6 +316,7 @@ def to_utf8_hex(code):
             ((code & 0b111111) + 0b10000000)
         )[2:].upper()
 
+
 def to_utf16be_hex(code):
     if 0 <= code <= 0xFFFF:
         return hex(code)[2:].upper().zfill(4)
@@ -298,6 +325,7 @@ def to_utf16be_hex(code):
             ((((code - 0x10000) >> 10) + 0xD800) << 16) + 
             (((code - 0x10000) & 0b1111111111) + 0xDC00)
         )[2:].upper().zfill(8)
+
 
 def to_utf16le_hex(code):
     if 0 <= code <= 0xFFFF:
@@ -310,8 +338,10 @@ def to_utf16le_hex(code):
         )[2:].upper().zfill(8)
         return be[2:4] + be[:2] + be[6:8] + be[4:6]
 
+
 def gap(s):
     return " ".join([s[i:i+2] for i in range(0, len(s), 2)])
+
 
 vari_viram_punctuation4 = set([
     0x9E4,
@@ -338,6 +368,15 @@ def is_vari_viram_punctuation(code):
     if code in vari_viram_punctuation4 or code in vari_viram_punctuation5:
         return True
     return False
+
+
+
+def get_group(group, group_lens, index):
+    for i in range(0, len(group_lens)):
+        if sum(group_lens[:i + 1]) >= index + 1:
+            return group[i], index - sum(group_lens[:i])
+    return
+
 
 bc = 0
 bgcs = tuple(map(
@@ -369,7 +408,9 @@ bgcs = tuple(map(
         (207, 255, 155)
     ]
 ))
-def generate_a_image(w, h, bar_height, _code,
+
+
+def generate_a_image(w, h, bar_height, _code, groups, group_lens, code_index,
                      c_font, b_font, be_font, o_font, r_font, h_font, n_font, fn_font, i_font, p_font,
                      fonts, last_type, show_private, show_undefined):
     font = None
@@ -410,7 +451,7 @@ def generate_a_image(w, h, bar_height, _code,
         bgc = 20
         textc = 235
     r = ("未定义", "未定义", "undefined", 0, [])
-    for index, item in enumerate(blocks):
+    for index, item in enumerate(BLOCKS):
         if item[0][0] <= _code <= item[0][1]:
             r = item[1]
             if bc:
@@ -501,8 +542,9 @@ def generate_a_image(w, h, bar_height, _code,
     name_height = bbox[3] - bbox[1]
     draw.text((35, r_y-name_height-5), name, font=n_font, fill=textc)
 
-    progress = round((r[4].index(_code) + 1) / r[3] * w)
-    draw.rectangle([0, 0, progress, bar_height], textc)
+    group, intra_group_index = get_group(groups, group_lens, code_index)
+    progress = (intra_group_index + 1) / group[2]
+    draw.rectangle([0, 0, round(progress * w), bar_height], textc)
 
     alias = ", ".join(get_char_alias(_code))
     if alias:
@@ -657,33 +699,37 @@ def generate_a_image(w, h, bar_height, _code,
 
     return image
 
+
 def generate_unicode_flash(width, height, bar_height, out_path, codes, fps, _fonts,
                            c_font, b_font, be_font, o_font, r_font, h_font, n_font, fn_font, i_font, p_font,
-                           last_type, no_dynamic, show_private, no_music, save_bmp, show_undefined, music):
+                           last_type, static, show_private, no_music, save_bmp, show_undefined, music):
+    groups = [(k, (lg := list(g)), len(lg)) for k, g in itertools.groupby(codes, get_block)]
+    group_lens = [l for _, _, l in groups]
+
     fonts = tuple(zip(map(lambda f: ImageFont.truetype(f, EXAMPLE_FONT_SIZE), _fonts), map(lambda f: TTFont(f)["cmap"].tables, _fonts), map(lambda f: get_font_name(TTFont(f)['name'].names), _fonts)))
     a = []
     count = 0
     temp_dir = os.path.join(CUR_FOLDER, "res")
     if not os.path.exists(temp_dir):
         os.makedirs(temp_dir)
-    #with tempfile.TemporaryDirectory() as temp_dir:
+
     print(f"gif dir: {temp_dir}")
     in_p = os.path.join(temp_dir, "input.txt")
 
     with open(in_p, "w", encoding="utf8") as f:
-        for code in tqdm(codes):
+        for code_index, code in enumerate(tqdm(codes)):
             try:
-                image = generate_a_image(width, height, bar_height, code,
+                image = generate_a_image(width, height, bar_height, code, groups, group_lens, code_index,
                                          c_font, b_font, be_font, o_font, r_font, h_font, n_font, fn_font, i_font, p_font,
                                          fonts, last_type, show_private, show_undefined)
             except OSError:
                 print(f"在U+{hex(code)[2:].upper().zfill(4)}处发生raster overflow，已跳过。")
                 continue
-            if bc or no_dynamic:
+            if bc or static:
                 if save_bmp:
-                    ires_path = os.path.join(temp_dir, f"{code}.bmp")
+                    ires_path = os.path.join(temp_dir, f"{code_index}.bmp")
                 else:
-                    ires_path = os.path.join(temp_dir, f"{code}.gif")
+                    ires_path = os.path.join(temp_dir, f"{code_index}.gif")
                 image.save(ires_path)
                 f.write(f"file '{ires_path}'\n")
             else:
@@ -694,7 +740,7 @@ def generate_unicode_flash(width, height, bar_height, out_path, codes, fps, _fon
                     a[0].save(ires_path, save_all=True, append_images=a[1:], optimize=False, duration=int(1000/fps), loop=0)
                     f.write(f"file '{ires_path}'\n")
                     a.clear()
-        if not bc and not no_dynamic and a:
+        if not bc and not static and a:
             count += 1
             ires_path = os.path.join(temp_dir, f"{count}.gif")
             a[0].save(ires_path, save_all=True, append_images=a[1:], optimize=False, duration=int(1000/fps), loop=0)
@@ -718,46 +764,48 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="这是一个Unicode快闪生成脚本")
     parser.add_argument('fps', type=float,
                         help='帧率，建议15，可以为小数')
-    parser.add_argument('-width', type=int, default=1920,
+    parser.add_argument('-wt', '--width', type=int, default=1920,
                         help='视频宽度，默认1920')
-    parser.add_argument('-height', type=int, default=1080,
+    parser.add_argument('-ht', '--height', type=int, default=1080,
                         help='视频宽度，默认1080')
-    parser.add_argument('-bar_height', type=int, default=36,
+    parser.add_argument('-bh', '--bar_height', type=int, default=36,
                         help='顶部进度条高度，默认36')
-    parser.add_argument('-fonts', type=str, nargs="*", default=[],
+    parser.add_argument('-f', '--fonts', type=str, nargs="*", default=[],
                         help='字体路径列表，按输入顺序计算优先级')
-    parser.add_argument('-out_path', type=str, default=os.path.join(CUR_FOLDER, "res.mp4"),
+    parser.add_argument('-op', '--out_path', type=str, default=os.path.join(CUR_FOLDER, "res.mp4"),
                         help="生成视频的路径")
-    parser.add_argument('-no_dynamic', action='store_true',
+    parser.add_argument('-s', '--static', action='store_true',
                         help='以静态图片模式保存临时图片')
-    parser.add_argument('-show_private', action='store_true',
+    parser.add_argument('-sp', '--show_private', action='store_true',
                         help='展示在字体中有字形的私用区字符')
-    parser.add_argument('-no_music', action='store_true',
+    parser.add_argument('-nm', '--no_music', action='store_true',
                         help='不添加音乐')
-    parser.add_argument('-skip_no_glyph', action='store_true',
+    parser.add_argument('-sng', '--skip_no_glyph', action='store_true',
                         help='跳过在所有自定义字体中都没有字形的字符')
-    parser.add_argument('-skip_long', action='store_true',
+    parser.add_argument('-sl', '--skip_long', action='store_true',
                         help='跳过U+323B0-U+DFFFF')
-    parser.add_argument('-music', type=str, default=os.path.join(CUR_FOLDER, "UFM.mp3"),
+    parser.add_argument('-m', '--music', type=str, default=os.path.join(CUR_FOLDER, "UFM.mp3"),
                         help='背景音乐文件路径')
-    parser.add_argument('-save_bmp', action='store_true',
-                        help='存为bmp格式，仅在-no_dynamic启用时生效，能大幅增加生成速度，但有更大概率抛出OSError: raster overflow错误。')
+    parser.add_argument('-sb', '--save_bmp', action='store_true',
+                        help='存为bmp格式，仅在--static启用时生效，能大幅增加生成速度，但有更大概率抛出OSError: raster overflow错误。')
     undef_group = parser.add_mutually_exclusive_group()
-    undef_group.add_argument('-skip_undefined', action='store_true',
+    undef_group.add_argument('-su', '--skip_undefined', action='store_true',
                         help='跳过未定义字符、非字符、代理字符等')
-    undef_group.add_argument('-show_undefined', action='store_true',
+    undef_group.add_argument('-shu', '--show_undefined', action='store_true',
                         help='展示在自定义字体中有字形的未定义字符、非字符、代理字符等')
     last_group = parser.add_mutually_exclusive_group()
-    last_group.add_argument('-use_mlst', action='store_true',
+    last_group.add_argument('-um', '--use_mlst', action='store_true',
                         help="使用MonuLast(典迹末境)字体")
-    last_group.add_argument('-use_last', action='store_true',
+    last_group.add_argument('-ul', '--use_last', action='store_true',
                         help="使用LastResort(最后手段)字体")
     chars_group = parser.add_mutually_exclusive_group(required=True)
-    chars_group.add_argument('-rang', type=str, nargs=2,
+    chars_group.add_argument('-r', '--rang', type=str, nargs=2,
                             help='快闪字符的范围，不带0x的十六进制数')
-    chars_group.add_argument('-from_file', type=argparse.FileType('r'),
-                            help='通过一个文件获取将要快闪的字符')
-    chars_group.add_argument('-from_font', action='store_true',
+    chars_group.add_argument('-fcf', '--from_code_file', type=argparse.FileType('r'),
+                            help='通过一个写着Unicode编码（不带0x的十六进制数，多个编码间用「,」分隔）的文件获取将要快闪的字符')
+    chars_group.add_argument('-ftf', '--from_text_file', type=argparse.FileType('r'),
+                            help='通过一个一般的文本文件获取将要快闪的字符')
+    chars_group.add_argument('-ff', '--from_font', action='store_true',
                             help='从字体文件列表获取将要快闪的字符')
     args = parser.parse_args()
 
@@ -778,10 +826,12 @@ if __name__ == "__main__":
         s = int(args.rang[0], 16)
         e = int(args.rang[1], 16)
         codes = list(range(s, e+1))
-    elif args.from_file:
-        codes = sorted(list(set(map(lambda v: int(v) if UNICODE_RE.search(v) else _ve(v), args.from_file.read().split(",")))))
+    elif args.from_code_file:
+        codes = list(map(lambda v: int(v, 16) if UNICODE_RE.search(v) else _ve(v), args.from_code_file.read().split(",")))
+    elif args.from_text_file:
+        codes = list(map(lambda char: ord(char), args.from_text_file.read()))
     elif args.from_font:
-        codes = sorted(list(set(merge_iterables(*[get_all_codes_from_font(font) for font in args.fonts]))))
+        codes = list(merge_iterables(*[get_all_codes_from_font(font) for font in args.fonts]))
 
     skip_long = args.skip_long
     skip_undefined = args.skip_undefined
@@ -797,13 +847,6 @@ if __name__ == "__main__":
             else:
                 del codes[codes.index(code)]
 
-    blocks_temp = {}
-    codes_set = set(codes)
-    for k, v in blocks:
-        block_char = sorted(list(codes_set & set(range(k[0], k[1] + 1))))
-        blocks_temp[k] = (*v, len(block_char), block_char)
-    blocks = blocks_temp.items()
-
     generate_unicode_flash(args.width, args.height, args.bar_height, args.out_path, codes, args.fps, args.fonts,
                            c_font, b_font, be_font, o_font, r_font, h_font, n_font, fn_font, i_font, p_font,
-                           (1 if args.use_last else 2 if args.use_mlst else 0), args.no_dynamic, args.show_private, args.no_music, args.save_bmp, args.show_undefined, args.music)
+                           (1 if args.use_last else 2 if args.use_mlst else 0), args.static, args.show_private, args.no_music, args.save_bmp, args.show_undefined, args.music)
