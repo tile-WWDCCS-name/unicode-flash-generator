@@ -1,11 +1,11 @@
 from PIL import Image, ImageDraw, ImageFont
 from tqdm import tqdm
 from fontTools.ttLib import TTFont
+import cv2
+import numpy as np
 
 import os
-import argparse
 import shutil
-import tempfile
 import re
 import csv
 import json
@@ -27,7 +27,7 @@ with open(os.path.join(CUR_FOLDER, "Blocks.csv"), encoding="utf-8") as blocks_cs
     BLOCK_NAMES = [line[2] for line in reader]
 
 with open(os.path.join(CUR_FOLDER, "Planes.csv"), encoding="utf-8") as blocks_csv:
-    reader = csv.reader(blocks_csv, delimiter='|')
+    reader = list(csv.reader(blocks_csv, delimiter='|'))
     PLANES = {tuple(map(lambda rang: int(rang, 16), line[0].split(".."))): (*line[1:], "-".join(map(lambda rang: "U+" + rang, line[0].split("..")))) for line in reader}.items()
 
 
@@ -577,61 +577,31 @@ def generate_a_image(w, h, bar_height, _code, groups, group_lens, code_index,
 
 def generate_unicode_flash(width, height, bar_height, out_path, codes, fps, _fonts,
                            c_font, b_font, be_font, o_font, r_font, h_font, n_font, fn_font, i_font, p_font,
-                           last_type, static, show_private, no_music, save_bmp, show_undefined, music):
+                           last_type, show_private, show_undefined):
     groups = [((*get_block_infos(k)[:-1], ), len(list(g))) for k, g in itertools.groupby(codes, get_block)]
     group_lens = [l for _, l in groups]
 
     fonts = tuple(zip(map(lambda f: ImageFont.truetype(f, EXAMPLE_FONT_SIZE), _fonts), map(lambda f: TTFont(f)["cmap"].tables, _fonts), map(lambda f: get_font_name(TTFont(f)['name'].names), _fonts)))
-    a = []
-    count = 0
-    temp_dir = os.path.join(CUR_FOLDER, "res")
-    if not os.path.exists(temp_dir):
-        os.makedirs(temp_dir)
 
-    print(f"gif dir: {temp_dir}")
-    in_p = os.path.join(temp_dir, "input.txt")
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    video_writer = cv2.VideoWriter(os.path.join(CUR_FOLDER, 'res.mp4'), fourcc, fps, (width, height))
 
-    with open(in_p, "w", encoding="utf8") as f:
-        for code_index, code in enumerate(tqdm(codes)):
-            try:
-                image = generate_a_image(width, height, bar_height, code, groups, group_lens, code_index,
-                                         c_font, b_font, be_font, o_font, r_font, h_font, n_font, fn_font, i_font, p_font,
-                                         fonts, last_type, show_private, show_undefined)
-            except OSError:
-                print(f"在U+{hex(code)[2:].upper().zfill(4)}处发生raster overflow，已跳过。")
-                continue
-            if static:
-                if save_bmp:
-                    ires_path = os.path.join(temp_dir, f"{code_index}.bmp")
-                else:
-                    ires_path = os.path.join(temp_dir, f"{code_index}.gif")
-                image.save(ires_path)
-                f.write(f"file '{ires_path}'\n")
-            else:
-                a.append(image)
-                if len(a) % 300 == 0 and len(a) != 0:
-                    count += 1
-                    ires_path = os.path.join(temp_dir, f"{count}.gif")
-                    a[0].save(ires_path, save_all=True, append_images=a[1:], optimize=False, duration=int(1000/fps), loop=0)
-                    f.write(f"file '{ires_path}'\n")
-                    a.clear()
-        if not static and a:
-            count += 1
-            ires_path = os.path.join(temp_dir, f"{count}.gif")
-            a[0].save(ires_path, save_all=True, append_images=a[1:], optimize=False, duration=int(1000/fps), loop=0)
-            f.write(f"file '{ires_path}'\n")
-            a.clear()
-    if not open(in_p, encoding="utf8").read():
-        raise ValueError('图片全都被跳过了！')
-    if no_music:
-        os.system(f'ffmpeg -r {fps} -f concat -safe 0 -i {os.path.abspath(in_p)} -pix_fmt yuv420p {os.path.abspath(out_path)} -hide_banner')
-    else:
-        os.system(f'ffmpeg -r {fps} -f concat -safe 0 -i {os.path.abspath(in_p)} -pix_fmt yuv420p {os.path.join(temp_dir, "out.mp4")} -hide_banner')
-        os.system(f'ffmpeg -i {os.path.join(temp_dir, "out.mp4")} -stream_loop -1 -i {music} -c copy -shortest {os.path.abspath(out_path)} -hide_banner')
-    shutil.rmtree(temp_dir)
+    for code_index, code in enumerate(tqdm(codes)):
+        try:
+            image = generate_a_image(width, height, bar_height, code, groups, group_lens, code_index,
+                                     c_font, b_font, be_font, o_font, r_font, h_font, n_font, fn_font, i_font, p_font,
+                                     fonts, last_type, show_private, show_undefined)
+        except OSError:
+            print(f"在U+{hex(code)[2:].upper().zfill(4)}处发生raster overflow，已跳过。")
+            continue
+        img_cv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+        video_writer.write(img_cv)
+
+    video_writer.release()
 
 
 if __name__ == "__main__":
+    import argparse
     def _ve(v):
         raise ValueError(f"无效Unicode码位 {v}")
 
@@ -649,20 +619,13 @@ if __name__ == "__main__":
                         help='字体路径列表，按输入顺序计算优先级')
     parser.add_argument('-op', '--out_path', type=str, default=os.path.join(CUR_FOLDER, "res.mp4"),
                         help="生成视频的路径")
-    parser.add_argument('-s', '--static', action='store_true',
-                        help='以静态图片模式保存临时图片')
     parser.add_argument('-sp', '--show_private', action='store_true',
                         help='展示在字体中有字形的私用区字符')
-    parser.add_argument('-nm', '--no_music', action='store_true',
-                        help='不添加音乐')
     parser.add_argument('-sng', '--skip_no_glyph', action='store_true',
                         help='跳过在所有自定义字体中都没有字形的字符')
     parser.add_argument('-sl', '--skip_long', action='store_true',
                         help='跳过U+323B0-U+DFFFF')
-    parser.add_argument('-m', '--music', type=str, default=os.path.join(CUR_FOLDER, "UFM.mp3"),
-                        help='背景音乐文件路径')
-    parser.add_argument('-sb', '--save_bmp', action='store_true',
-                        help='存为bmp格式，仅在--static启用时生效，能大幅增加生成速度，但有更大概率抛出OSError: raster overflow错误。')
+
     undef_group = parser.add_mutually_exclusive_group()
     undef_group.add_argument('-su', '--skip_undefined', action='store_true',
                         help='跳过未定义字符、非字符、代理字符等')
@@ -782,4 +745,4 @@ if __name__ == "__main__":
 
     generate_unicode_flash(args.width, args.height, args.bar_height, args.out_path, codes, args.fps, args.fonts,
                            c_font, b_font, be_font, o_font, r_font, h_font, n_font, fn_font, i_font, p_font,
-                           (1 if args.use_last else 2 if args.use_mlst else 0), args.static, args.show_private, args.no_music, args.save_bmp, args.show_undefined, args.music)
+                           (1 if args.use_last else 2 if args.use_mlst else 0), args.show_private, args.show_undefined)

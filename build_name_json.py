@@ -2,8 +2,9 @@ import os
 import json
 import re
 
-NAME_LIST_PATH = "/storage/emulated/0/下载/git/unicode快闪/NameList"
-OUT_PATH = "/storage/emulated/0/下载/git/unicode快闪/NameList.json"
+CUR_FOLDER = os.path.split(__file__)[0]
+NAME_LIST_PATH = os.path.join(CUR_FOLDER, 'NameList')
+OUT_PATH = os.path.join(CUR_FOLDER, 'NameList.json')
 CTRL_NAME = {
     k: v for k, v in zip(tuple(range(0x20)) + tuple(range(0x7F, 0x100)), "NUL SOH STX ETX EOT ENQ ACK BEL BS HT LF VT FF CR SO SI DLE DC1 DC2 DC3 DC4 NAK SYN ETB CAN EM SUB ESC FS GS RS US DEL XXX(PAD) XXX(HOP) BPH NBH IND NEL SSA ESA HTS HTJ VTS PLD PLU R1 SS2 SS3 DCS PU1 PU2 STS CCH MW SPA EPA SOS XXX(SGCI) SCI CSI ST OSC PM APC".split())
 }
@@ -13,18 +14,18 @@ def edit_reserved(o):
 
 UNICODE_RE = re.compile(r"^([0-9a-fA-F]|10)?[0-9a-fA-F]{0,4}$")
 
-characters = {}
+characters: dict[str, dict[str, str]] = {}
 class OneCharacter:
     id = None
     name = None
     version = 0
-    comment = []
-    alias = []
-    formal = []
-    xref = []
-    vari = []
-    decomp = []
-    compat = []
+    comment: list[str] = []
+    alias: list[str] = []
+    formal: list[str] = []
+    xref: list[str] = []
+    vari: list[str] = []
+    decomp: list[str] = []
+    compat: list[str] = []
     def __init__(self, code, name, version):
         self.id = int(code, 16)
         self.name = name
@@ -41,16 +42,7 @@ class OneCharacter:
         if self.id in characters:
             self.version = characters[self.id].version
         characters[self.id] = self
-    def insert(self):
-        global cur
-        def list_to_str(l):
-            return '\'' + '\n'.join(l) + '\'' if len(l) > 0 else 'NULL'
-        exp = f'INSERT INTO name_table (id, words, name, version, comment, alias, formal, xref, vari, decomp, compat) values ({self.id}, \'{" ".join([self.name] + self.alias + self.formal)}\', \'{self.name}\', {self.version}, {list_to_str(self.comment)}, {list_to_str(self.alias)}, {list_to_str(self.formal)}, {list_to_str(self.xref)}, {list_to_str(self.vari)}, {list_to_str(self.decomp)}, {list_to_str(self.compat)});'
-        try:
-            cur.execute(exp)
-        except:
-            print(exp)
-            raise
+
 
 class CharacterEncoder(json.JSONEncoder):
     def default(self, obj):

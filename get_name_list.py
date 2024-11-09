@@ -1,6 +1,7 @@
 import requests
 import tqdm
 import os
+from typing import List
 
 UNICODE_VERSIONS = [
   "4.1.0",
