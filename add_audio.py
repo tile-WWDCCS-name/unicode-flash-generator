@@ -1,6 +1,7 @@
 import subprocess
 import os
 
+
 def add_music_to_video(video_path, audio_path, output_path):
     command = [
         'ffmpeg',
@@ -12,19 +13,23 @@ def add_music_to_video(video_path, audio_path, output_path):
         '-shortest',            # 使输出文件的长度与视频相同
         output_path             # 输出文件路径
     ]
-    
+
     subprocess.run(command)
+
 
 if __name__ == '__main__':
     import argparse
 
-    CUR_FOLDER = os.path.split(__file__)[0]
+    CUR_FOLDER = os.path.dirname(__file__)
     parser = argparse.ArgumentParser(description="这是一个为视频添加BGM的脚本。")
-    parser.add_argument('-vp', '--video_path', type=str, default=os.path.join(CUR_FOLDER, "res.mp4"),
+    parser.add_argument('-vp', '--video_path', type=str,
+                        default=os.path.join(CUR_FOLDER, "res.mp4"),
                         help='视频文件路径，默认为当前路径下的res.mp4文件。')
-    parser.add_argument('-ap', '--audio_path', type=str, default=os.path.join(CUR_FOLDER, "UFM.mp3"),
+    parser.add_argument('-ap', '--audio_path', type=str,
+                        default=os.path.join(CUR_FOLDER, "UFM.mp3"),
                         help='背景音乐文件路径，默认为当前路径下的UFM.mp3文件。')
-    parser.add_argument('-op', '--output_path', type=str, default=os.path.join(CUR_FOLDER, "with_audio.mp4"),
+    parser.add_argument('-op', '--output_path', type=str,
+                        default=os.path.join(CUR_FOLDER, "with_audio.mp4"),
                         help='输出视频文件路径，默认为当前路径下的with_audio.mp4文件。')
     args = parser.parse_args()
 

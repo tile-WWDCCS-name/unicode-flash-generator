@@ -2,19 +2,31 @@ import os
 import json
 import re
 
-CUR_FOLDER = os.path.split(__file__)[0]
+CUR_FOLDER = os.path.dirname(__file__)
 NAME_LIST_PATH = os.path.join(CUR_FOLDER, 'NameList')
 OUT_PATH = os.path.join(CUR_FOLDER, 'NameList.json')
 CTRL_NAME = {
-    k: v for k, v in zip(tuple(range(0x20)) + tuple(range(0x7F, 0x100)), "NUL SOH STX ETX EOT ENQ ACK BEL BS HT LF VT FF CR SO SI DLE DC1 DC2 DC3 DC4 NAK SYN ETB CAN EM SUB ESC FS GS RS US DEL XXX(PAD) XXX(HOP) BPH NBH IND NEL SSA ESA HTS HTJ VTS PLD PLU R1 SS2 SS3 DCS PU1 PU2 STS CCH MW SPA EPA SOS XXX(SGCI) SCI CSI ST OSC PM APC".split())
+    k: v for k, v in zip(
+        tuple(range(0x20)) + tuple(range(0x7F, 0x100)),
+        ("NUL SOH STX ETX EOT ENQ ACK BEL BS HT LF VT FF CR SO SI DLE " +
+         "DC1 DC2 DC3 DC4 NAK SYN ETB CAN EM SUB ESC FS GS RS US DEL " +
+         "XXX(PAD) XXX(HOP) BPH NBH IND NEL SSA ESA HTS HTJ VTS PLD PLU " +
+         "R1 SS2 SS3 DCS PU1 PU2 STS CCH MW SPA EPA SOS XXX(SGCI) SCI CSI " +
+         "ST OSC PM APC").split()
+    )
 }
 
+
 def edit_reserved(o):
-    return f"<reserved - U+{hex(o.id)[2:].upper().zfill(4)}, original U+{o.xref[0]}>"
+    return (f"<reserved - U+{hex(o.id)[2:].upper().zfill(4)}, " +
+            f"original U+{o.xref[0]}>")
+
 
 UNICODE_RE = re.compile(r"^([0-9a-fA-F]|10)?[0-9a-fA-F]{0,4}$")
 
 characters: dict[str, dict[str, str]] = {}
+
+
 class OneCharacter:
     id = None
     name = None
@@ -26,6 +38,7 @@ class OneCharacter:
     vari: list[str] = []
     decomp: list[str] = []
     compat: list[str] = []
+
     def __init__(self, code, name, version):
         self.id = int(code, 16)
         self.name = name
@@ -37,6 +50,7 @@ class OneCharacter:
         self.vari = []
         self.decomp = []
         self.compat = []
+
     def update(self):
         global characters
         if self.id in characters:
@@ -48,7 +62,9 @@ class CharacterEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, OneCharacter):
             return {"code": "U+" + hex(obj.id)[2:].upper().zfill(4),
-                    "name": edit_reserved(obj) if (n := obj.name) == "<reserved>" else n,
+                    "name": (edit_reserved(obj)
+                             if (n := obj.name) == "<reserved>"
+                             else n),
                     "version": obj.version,
                     "comment": obj.comment,
                     "alias": obj.alias,
@@ -59,6 +75,7 @@ class CharacterEncoder(json.JSONEncoder):
                     "compat mapping": obj.compat}
         return super().default(obj)
 
+
 def find_files_by_extension(directory, extension):
     file_list = []
     for file in os.listdir(directory):
@@ -66,7 +83,13 @@ def find_files_by_extension(directory, extension):
             file_list.append(os.path.join(directory, file))
     return file_list
 
-for fp in sorted(find_files_by_extension(NAME_LIST_PATH, ".txt"), key=lambda v: int(os.path.splitext(os.path.split(v)[1])[0].replace(".", ""))):
+
+for fp in sorted(
+    find_files_by_extension(NAME_LIST_PATH, ".txt"),
+    key=lambda v: int(os.path.splitext(
+        os.path.split(v)[1]
+    )[0].replace(".", ""))
+):
     version = os.path.splitext(os.path.split(fp)[1])[0]
     if version == "6.0.0":
         version = "6.0.0 or earlier"
@@ -83,7 +106,7 @@ for fp in sorted(find_files_by_extension(NAME_LIST_PATH, ".txt"), key=lambda v: 
                     if current is None:
                         return
                     if len(line) < 3:
-                        print(f'Malformed line: {line}', file=sys.stderr)
+                        print(f'Malformed line: {line}')
                         return
                     if line[1] == '\t':
                         return
@@ -94,28 +117,64 @@ for fp in sorted(find_files_by_extension(NAME_LIST_PATH, ".txt"), key=lambda v: 
                     if line[1] == '%':
                         current.formal.append(line[3:].replace('\'', '"'))
                     if line[1] == 'x':
-                        current.xref.append("U+" + (line.split(' ')[-1][:-1] if line[3] == '(' else line[3:]).replace('\'', '"'))
+                        current.xref.append("U+" + (
+                            line.split(' ')[-1][:-1]
+                            if line[3] == '('
+                            else line[3:]).replace('\'', '"')
+                        )
                     if line[1] == '~':
-                        current.vari.append(' '.join(("U+" + s if UNICODE_RE.search(s) else s) for s in line[3:].split(' ')).replace('\'', '"').rstrip(' '))
+                        current.vari.append(
+                            ' '.join((
+                                "U+" + s
+                                if UNICODE_RE.search(s)
+                                else s
+                            ) for s in line[3:].split(' '))
+                            .replace('\'', '"')
+                            .rstrip(' ')
+                        )
                     if line[1] == ':':
-                        current.decomp.append(' '.join(("U+" + s if UNICODE_RE.search(s) else s) for s in line[3:].split(' ') if re.match('^[0-9A-F]+$', s)).replace('\'', '"'))
+                        current.decomp.append(
+                            ' '.join((
+                                "U+" + s
+                                if UNICODE_RE.search(s)
+                                else s
+                            ) for s in line[3:].split(' ')
+                              if re.match('^[0-9A-F]+$', s))
+                            .replace('\'', '"')
+                        )
                     if line[1] == '#':
-                        current.compat.append(' '.join(("U+" + s if UNICODE_RE.search(s) else s) for s in line[3:].split(' ') if re.match('^([0-9A-F]+|<.*>)$', s)).replace('\'', '"'))
+                        current.compat.append(
+                            ' '.join((
+                                "U+" + s
+                                if UNICODE_RE.search(s)
+                                else s
+                            ) for s in line[3:].split(' ')
+                              if re.match('^([0-9A-F]+|<.*>)$', s))
+                            .replace('\'', '"')
+                        )
                 else:
                     if current is not None:
                         current.update()
                     tokens = line.split('\t')
                     if len(tokens) != 2:
-                        print(f'Malformed line: {line}', file=sys.stderr)
+                        print(f'Malformed line: {line}')
                         return
                     if tokens[1] == '<not a character>':
                         current = None
                         return
                     if tokens[1] == '<control>':
-                        tokens[1] = f'<control - {CTRL_NAME[int(tokens[0], 16)]}>'
+                        tokens[1] = ('<control - ' +
+                                     f'{CTRL_NAME[int(tokens[0], 16)]}>')
                     current = OneCharacter(tokens[0], tokens[1], version)
             oneline(line.replace("\n", ""))
             if current is not None:
                 current.update()
 
-json.dump(characters, open(OUT_PATH, "w"), cls=CharacterEncoder, indent=2, ensure_ascii=False)
+
+json.dump(
+    characters,
+    open(OUT_PATH, "w"),
+    cls=CharacterEncoder,
+    indent=2,
+    ensure_ascii=False
+)

@@ -1,7 +1,6 @@
 import requests
 import tqdm
 import os
-from typing import List
 
 UNICODE_VERSIONS = [
   "4.1.0",
@@ -23,7 +22,7 @@ UNICODE_VERSIONS = [
   "14.0.0",
   "15.0.0",
   "15.1.0",
-  #"16.0.0"
+  # "16.0.0"
 ]
 NAME_LIST_PATH = "/storage/emulated/0/qpython/python代码/uni/unicode快闪/NameList/"
 

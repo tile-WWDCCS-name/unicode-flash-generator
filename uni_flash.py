@@ -121,6 +121,7 @@ VERSION_RANGES = [
 VERSION_RANGE_START = [i[0][0] for i in VERSION_RANGES]
 VERSION_RANGE_END = [i[0][1] for i in VERSION_RANGES]
 
+
 # 字体相关的函数
 def get_font_name(names):
     for record in names:
@@ -135,22 +136,9 @@ def get_font_name(names):
             return record.toStr()
 
 
-def get_all_codes_from_font(fp):
-    font = TTFont(fp)
-    codes = sorted(list(set(merge_iterables(
-        *map(
-            lambda table: list(table.cmap.keys()),
-            font["cmap"].tables
-        )
-    ))))
+def get_all_codes_from_font(font):
+    codes = set(font.getBestCmap().keys())
     return codes
-
-
-def check_glyph_in_font(font_cmap, code):
-    for table in font_cmap:
-        if code in table.cmap:
-            return True
-    return False
 
 
 # 字符信息相关的函数
@@ -358,7 +346,7 @@ def generate_a_image(w, h, bar_height, _code, groups, group_lens, code_index,
                      fonts, last_type, show_private, show_undefined):
     font = None
     for _font, font_cmap, _font_name in fonts:
-        if check_glyph_in_font(font_cmap, _code):
+        if _code in font_cmap:
             font = _font
             font_name = _font_name
             break
@@ -400,7 +388,7 @@ def generate_a_image(w, h, bar_height, _code, groups, group_lens, code_index,
             not is_private_use(_code)
         ):
             for cmap, name, main_font in main_fonts:
-                if check_glyph_in_font(cmap, _code):
+                if _code in cmap:
                     font = main_font
                     font_name = name
                     break
@@ -730,7 +718,7 @@ def generate_unicode_flash(width, height, bar_height, out_path, codes, fps, _fon
             _fonts
         ),
         map(
-            lambda f: TTFont(f)["cmap"].tables,
+            lambda f: get_all_codes_from_font(TTFont(f)),
             _fonts
         ),
         map(
@@ -865,7 +853,7 @@ if __name__ == "__main__":
 
     main_fonts = [(p, TTFont(p)) for p in main_fonts]
     main_fonts = [(
-        tf["cmap"].tables,
+        get_all_codes_from_font(tf),
         get_font_name(tf['name'].names),
         ImageFont.truetype(p, EXAMPLE_FONT_SIZE)
     ) for p, tf in main_fonts]
@@ -908,8 +896,8 @@ if __name__ == "__main__":
     elif args.from_text_file:
         codes = list(map(lambda char: ord(char), args.from_text_file.read()))
     elif args.from_font:
-        codes = list(merge_iterables(
-            *[get_all_codes_from_font(font) for font in args.fonts]
+        codes = sorted(merge_iterables(
+            *(get_all_codes_from_font(TTFont(font)) for font in args.fonts)
         ))
 
     skip_long = args.skip_long
@@ -923,13 +911,14 @@ if __name__ == "__main__":
             ), codes
         ))
     if skip_no_glyph:
-        font_cmaps = list(map(lambda f: TTFont(f)["cmap"].tables, args.fonts))
-        for code in codes[:]:
-            for font_cmap in font_cmaps:
-                if check_glyph_in_font(font_cmap, code):
-                    break
-            else:
-                del codes[codes.index(code)]
+        all_glyphs = set(merge_iterables(*map(
+            lambda f: get_all_codes_from_font(TTFont(f)),
+            args.fonts
+        )))
+
+        codes = list(filter(
+            lambda c: c in all_glyphs, codes
+        ))
 
     generate_unicode_flash(args.width, args.height, args.bar_height, args.out_path, codes, args.fps, args.fonts,
                            c_font, b_font, be_font, o_font, r_font, h_font, n_font, fn_font, i_font, p_font,
