@@ -14,7 +14,7 @@ import itertools
 # 常量的定义
 UNICODE_RE = re.compile(r"^([0-9a-fA-F]|10)?[0-9a-fA-F]{0,4}$")
 
-CUR_FOLDER = os.path.split(__file__)[0]
+CUR_FOLDER = os.path.dirname(__file__)
 
 NOT_CHAR = [
     0xFFFE, 0xFFFF, 0x1FFFE, 0x1FFFF, 0x2FFFE,
@@ -95,7 +95,7 @@ VERSION_RANGES = [
     ((0x20000, 0x2A6D6), "6.0.0 or earlier"),
     ((0x2A700, 0x2B734), "6.0.0 or earlier"),
     ((0x2B740, 0x2B81D), "6.0.0 or earlier"),
-    (0x9FCC, "6.1.0"),
+    ((0x9FCC, 0x9FCC), "6.1.0"),
     ((0x9FCD, 0x9FD5), "8.0.0"),
     ((0x2B820, 0x2CEA1), "8.0.0"),
     ((0x17000, 0x187EC), "9.0.0"),
@@ -113,11 +113,13 @@ VERSION_RANGES = [
     ((0x9FFD, 0x9FFF), "14.0.0"),
     ((0x2A6DE, 0x2A6DF), "14.0.0"),
     ((0x2B735, 0x2B738), "14.0.0"),
-    (0x2B739, "15.0.0"),
+    ((0x2B739, 0x2B739), "15.0.0"),
     ((0x31350, 0x323AF), "15.0.0"),
     ((0x2EBF0, 0x2EE5D), "15.1.0"),
 ]
 
+VERSION_RANGE_START = [i[0][0] for i in VERSION_RANGES]
+VERSION_RANGE_END = [i[0][1] for i in VERSION_RANGES]
 
 # 字体相关的函数
 def get_font_name(names):
@@ -201,13 +203,13 @@ def get_char_comment(code):
 
 
 def get_char_version(code):
-    for range_tuple, version in VERSION_RANGES:
-        if isinstance(range_tuple, tuple):
-            if range_tuple[0] <= code <= range_tuple[1]:
-                return version
-        elif code == range_tuple:
-            return version
-
+    index = bisect.bisect_right(VERSION_RANGE_START, code) - 1
+    
+    if (
+        index != -1 and
+        VERSION_RANGE_END[index] >= code
+    ):
+        return VERSION_RANGES[index][1]
     return NAME_LIST.get(
         str(code),
         {"version": "<future version>"}
