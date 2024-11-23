@@ -12,7 +12,7 @@ import bisect
 import itertools
 
 # 常量的定义
-UNICODE_RE = re.compile(r"^([0-9a-fA-F]|10)?[0-9a-fA-F]{0,4}$")
+UNICODE_RE = re.compile(r'^([0-9a-fA-F]|10)?[0-9a-fA-F]{0,4}$')
 
 CUR_FOLDER = os.path.dirname(__file__)
 
@@ -26,43 +26,42 @@ NOT_CHAR = [
     0xFFFFE, 0xFFFFF, 0x10FFFE, 0x10FFFF
 ]
 NOT_CHAR.extend(range(0xFDD0, 0xFDF0))
-
 with open(
-    os.path.join(CUR_FOLDER, "Blocks.csv"),
-    encoding="utf-8"
+    os.path.join(CUR_FOLDER, 'Blocks.csv'),
+    encoding='utf-8'
 ) as blocks_csv:
     reader = list(csv.reader(blocks_csv, delimiter='|'))
     BLOCK_INFOS = {
         line[2]: (
             line[2],
             line[-1],
-            "-".join(map(lambda rang: "U+" + rang, line[0].split(".."))),
-            tuple(map(lambda i: int(i, 16), line[0].split("..")))
+            '-'.join(map(lambda rang: 'U+' + rang, line[0].split('..'))),
+            tuple(map(lambda i: int(i, 16), line[0].split('..')))
         ) for line in reader
     }
     BLOCK_START_LIST = [int(line[0].split('..')[0], 16) for line in reader]
     BLOCK_NAMES = [line[2] for line in reader]
 
 with open(
-    os.path.join(CUR_FOLDER, "Planes.csv"),
-    encoding="utf-8"
+    os.path.join(CUR_FOLDER, 'Planes.csv'),
+    encoding='utf-8'
 ) as blocks_csv:
     reader = list(csv.reader(blocks_csv, delimiter='|'))
     PLANES = {
-        tuple(map(lambda rang: int(rang, 16), line[0].split(".."))): (
+        tuple(map(lambda rang: int(rang, 16), line[0].split('..'))): (
              *line[1:],
-             "-".join(map(lambda rang: "U+" + rang, line[0].split("..")))
+             '-'.join(map(lambda rang: 'U+' + rang, line[0].split('..')))
         ) for line in reader
     }.items()
 
 
 NAME_LIST = json.load(open(
-    os.path.join(CUR_FOLDER, "NameList.json"),
-    encoding="utf8"
+    os.path.join(CUR_FOLDER, 'NameList.json'),
+    encoding='utf8'
 ))
 DEFINED_CHARACTER_LIST = set(json.load(open(
-    os.path.join(CUR_FOLDER, "DefinedCharacterList.json"),
-    encoding="utf8"
+    os.path.join(CUR_FOLDER, 'DefinedCharacterList.json'),
+    encoding='utf8'
 )))
 EXAMPLE_FONT_SIZE = 220
 VARI_VIRAM_PUNCTUATION4 = {
@@ -87,35 +86,35 @@ VARI_VIRAM_PUNCTUATION5 = {
 }
 
 VERSION_RANGES = [
-    ((0xE000, 0xF8FF), "6.0.0 or earlier"),
-    ((0xF0000, 0xFFFFD), "6.0.0 or earlier"),
-    ((0x100000, 0x10FFFD), "6.0.0 or earlier"),
-    ((0x3400, 0x4DB5), "6.0.0 or earlier"),
-    ((0x4E00, 0x9FCB), "6.0.0 or earlier"),
-    ((0x20000, 0x2A6D6), "6.0.0 or earlier"),
-    ((0x2A700, 0x2B734), "6.0.0 or earlier"),
-    ((0x2B740, 0x2B81D), "6.0.0 or earlier"),
-    ((0x9FCC, 0x9FCC), "6.1.0"),
-    ((0x9FCD, 0x9FD5), "8.0.0"),
-    ((0x2B820, 0x2CEA1), "8.0.0"),
-    ((0x17000, 0x187EC), "9.0.0"),
-    ((0x9FD6, 0x9FEA), "10.0.0"),
-    ((0x2CEB0, 0x2EBE0), "10.0.0"),
-    ((0x9FEB, 0x9FEF), "11.0.0"),
-    ((0x187ED, 0x187F1), "11.0.0"),
-    ((0xAC00, 0xD7A3), "6.0.0 or earlier"),
-    ((0x187F2, 0x187F7), "12.0.0"),
-    ((0x4DB6, 0x4DBF), "13.0.0"),
-    ((0x9FF0, 0x9FFC), "13.0.0"),
-    ((0x2A6D7, 0x2A6DD), "13.0.0"),
-    ((0x30000, 0x3134A), "13.0.0"),
-    ((0x18D00, 0x18D08), "13.0.0"),
-    ((0x9FFD, 0x9FFF), "14.0.0"),
-    ((0x2A6DE, 0x2A6DF), "14.0.0"),
-    ((0x2B735, 0x2B738), "14.0.0"),
-    ((0x2B739, 0x2B739), "15.0.0"),
-    ((0x31350, 0x323AF), "15.0.0"),
-    ((0x2EBF0, 0x2EE5D), "15.1.0"),
+    ((0xE000, 0xF8FF), '6.0.0 or earlier'),
+    ((0xF0000, 0xFFFFD), '6.0.0 or earlier'),
+    ((0x100000, 0x10FFFD), '6.0.0 or earlier'),
+    ((0x3400, 0x4DB5), '6.0.0 or earlier'),
+    ((0x4E00, 0x9FCB), '6.0.0 or earlier'),
+    ((0x20000, 0x2A6D6), '6.0.0 or earlier'),
+    ((0x2A700, 0x2B734), '6.0.0 or earlier'),
+    ((0x2B740, 0x2B81D), '6.0.0 or earlier'),
+    ((0x9FCC, 0x9FCC), '6.1.0'),
+    ((0x9FCD, 0x9FD5), '8.0.0'),
+    ((0x2B820, 0x2CEA1), '8.0.0'),
+    ((0x17000, 0x187EC), '9.0.0'),
+    ((0x9FD6, 0x9FEA), '10.0.0'),
+    ((0x2CEB0, 0x2EBE0), '10.0.0'),
+    ((0x9FEB, 0x9FEF), '11.0.0'),
+    ((0x187ED, 0x187F1), '11.0.0'),
+    ((0xAC00, 0xD7A3), '6.0.0 or earlier'),
+    ((0x187F2, 0x187F7), '12.0.0'),
+    ((0x4DB6, 0x4DBF), '13.0.0'),
+    ((0x9FF0, 0x9FFC), '13.0.0'),
+    ((0x2A6D7, 0x2A6DD), '13.0.0'),
+    ((0x30000, 0x3134A), '13.0.0'),
+    ((0x18D00, 0x18D08), '13.0.0'),
+    ((0x9FFD, 0x9FFF), '14.0.0'),
+    ((0x2A6DE, 0x2A6DF), '14.0.0'),
+    ((0x2B735, 0x2B738), '14.0.0'),
+    ((0x2B739, 0x2B739), '15.0.0'),
+    ((0x31350, 0x323AF), '15.0.0'),
+    ((0x2EBF0, 0x2EE5D), '15.1.0'),
 ]
 
 VERSION_RANGE_START = [i[0][0] for i in VERSION_RANGES]
@@ -143,18 +142,18 @@ def get_all_codes_from_font(font):
 
 # 字符信息相关的函数
 def get_char_name(code):
-    code_u = "U+" + hex(code)[2:].upper()
+    code_u = 'U+' + hex(code)[2:].upper()
 
     if code in NOT_CHAR:
-        return f"<not a character-{code_u}>"
+        return f'<not a character-{code_u}>'
     if 0xD800 <= code <= 0xDFFF:
-        return f"Surrogate-{code_u}"
+        return f'Surrogate-{code_u}'
     if (
         0xE000 <= code <= 0xF8FF or
         0xF0000 <= code <= 0xFFFFD or
         0x100000 <= code <= 0x10FFFD
     ):
-        return f"Private Use-{code_u}"
+        return f'Private Use-{code_u}'
     if (
         0x3400 <= code <= 0x4DBF or
         0x4E00 <= code <= 0x9FFF or
@@ -168,31 +167,31 @@ def get_char_name(code):
         0x30000 <= code <= 0x3134A or
         0x31350 <= code <= 0x323AF
     ):
-        return f"CJK Unified Ideograph-{code_u}"
+        return f'CJK Unified Ideograph-{code_u}'
     if 0xAC00 <= code <= 0xD7A3:
-        return f"Hangul Syllable-{code_u}"
+        return f'Hangul Syllable-{code_u}'
     if (
         0x17000 <= code <= 0x187F7 or
         0x18D00 <= code <= 0x18D08
     ):
-        return f"Tangut-{code_u}"
+        return f'Tangut-{code_u}'
     return NAME_LIST.get(
         str(code),
-        {"name": f"<undefined character-{code_u}>"}
+        {'name': f'<undefined character-{code_u}>'}
     )['name']
 
 
 def get_char_alias(code):
-    return NAME_LIST.get(str(code), {"alias": []})['alias']
+    return NAME_LIST.get(str(code), {'alias': []})['alias']
 
 
 def get_char_comment(code):
-    return NAME_LIST.get(str(code), {"comment": []})['comment']
+    return NAME_LIST.get(str(code), {'comment': []})['comment']
 
 
 def get_char_version(code):
     index = bisect.bisect_right(VERSION_RANGE_START, code) - 1
-    
+
     if (
         index != -1 and
         VERSION_RANGE_END[index] >= code
@@ -200,7 +199,7 @@ def get_char_version(code):
         return VERSION_RANGES[index][1]
     return NAME_LIST.get(
         str(code),
-        {"version": "<future version>"}
+        {'version': '<future version>'}
     )['version']
 
 
@@ -312,16 +311,16 @@ def auto_width(string, font, width):
 
         if char == ' ' and current_width + char_width > width:
             processed_string += '\n  '
-            current_width = (bbox := font.getbbox("  "))[2] - bbox[0]
+            current_width = (bbox := font.getbbox('  '))[2] - bbox[0]
         elif current_width + char_width > width:
             processed_string_list = list(processed_string)
-            last_space_index = processed_string.rfind(" ")
-            processed_string_list[last_space_index] = "\n  "
-            processed_string = "".join(processed_string_list)
+            last_space_index = processed_string.rfind(' ')
+            processed_string_list[last_space_index] = '\n  '
+            processed_string = ''.join(processed_string_list)
             processed_string += char
             current_width = (
                 sum(char_widths[last_space_index+1:i+1]) +
-                (bbox := font.getbbox("  "))[2] - bbox[0]
+                (bbox := font.getbbox('  '))[2] - bbox[0]
             )
         else:
             processed_string += char
@@ -337,7 +336,7 @@ def merge_iterables(*iterables):
 
 
 def gap(s):
-    return " ".join([s[i:i+2] for i in range(0, len(s), 2)])
+    return ' '.join([s[i:i+2] for i in range(0, len(s), 2)])
 
 
 # 主要函数
@@ -351,35 +350,35 @@ def generate_a_image(w, h, bar_height, _code, groups, group_lens, code_index,
             font_name = _font_name
             break
     if _code == 0xA:
-        text = "\u240A"
+        text = '\u240A'
     elif _code == 0xD:
-        text = "\u240D"
+        text = '\u240D'
     elif _code in VARI_VIRAM_PUNCTUATION4:
-        text = "\u0964"
+        text = '\u0964'
         font = main_fonts[1][2]
         font_name = main_fonts[1][1]
     elif _code in VARI_VIRAM_PUNCTUATION5:
-        text = "\u0965"
+        text = '\u0965'
         font = main_fonts[1][2]
         font_name = main_fonts[1][1]
     elif _code == 0x2072:
-        text = "\u00B2"
+        text = '\u00B2'
         font = main_fonts[1][2]
         font_name = main_fonts[1][1]
     elif _code == 0x2073:
-        text = "\u00B3"
+        text = '\u00B3'
         font = main_fonts[1][2]
         font_name = main_fonts[1][1]
     else:
         text = chr(_code)
-    utf8 = "UTF-8: " + gap(to_utf8_hex(_code))
-    utf16le = "UTF-16LE: " + gap(to_utf16le_hex(_code))
-    utf16be = "UTF-16BE: " + gap(to_utf16be_hex(_code))
+    utf8 = 'UTF-8: ' + gap(to_utf8_hex(_code))
+    utf16le = 'UTF-16LE: ' + gap(to_utf16le_hex(_code))
+    utf16be = 'UTF-16BE: ' + gap(to_utf16be_hex(_code))
 
     bgc = 20
     textc = 235
     group, intra_group_index = get_group(groups, group_lens, code_index)
-    block_infos, group_len = group
+    block_infos, _ = group
     block_cn_name, block_en_name, block_range = block_infos
 
     if font is None:
@@ -408,10 +407,10 @@ def generate_a_image(w, h, bar_height, _code, groups, group_lens, code_index,
                 font = font_last
                 font_name = font_name_last
             else:
-                font_name = "no font"
+                font_name = 'no font'
 
-    code = "U+" + hex(_code)[2:].upper().zfill(4)
-    image = Image.new("L", (w, h), color=bgc)
+    code = 'U+' + hex(_code)[2:].upper().zfill(4)
+    image = Image.new('L', (w, h), color=bgc)
 
     draw = ImageDraw.Draw(image)
 
@@ -422,7 +421,7 @@ def generate_a_image(w, h, bar_height, _code, groups, group_lens, code_index,
     code_y = h - code_height*1.5 - 5
     draw.text((code_x, code_y), code, font=c_font, fill=textc)
 
-    fn = "字体: " + font_name
+    fn = '字体: ' + font_name
     bbox = fn_font.getbbox(fn)
     fn_width = bbox[2] - bbox[0]
     fn_height = bbox[3] - bbox[1]
@@ -466,7 +465,7 @@ def generate_a_image(w, h, bar_height, _code, groups, group_lens, code_index,
     block_en_y = (
         h -
         block_en_height -
-        ((_b := be_font.getbbox("a"))[3] - _b[1])*0.5 -
+        ((_b := be_font.getbbox('a'))[3] - _b[1])*0.5 -
         5
     )
     draw.text((35, block_en_y), block_en, font=be_font, fill=textc)
@@ -501,9 +500,9 @@ def generate_a_image(w, h, bar_height, _code, groups, group_lens, code_index,
         fill=textc
     )
 
-    alias = ", ".join(get_char_alias(_code))
+    alias = ', '.join(get_char_alias(_code))
     if alias:
-        alias = auto_width("alias: " + alias, i_font, w-35)
+        alias = auto_width('alias: ' + alias, i_font, w-35)
         bbox = draw.textbbox(xy=(0, 0), text=alias, font=i_font)
         alias_height = bbox[3] - bbox[1]
         alias_y = percent_y + percent_height + 5
@@ -512,13 +511,13 @@ def generate_a_image(w, h, bar_height, _code, groups, group_lens, code_index,
         alias_height = 0
         alias_y = percent_y + percent_height
 
-    formal_alias = ", ".join(NAME_LIST.get(
+    formal_alias = ', '.join(NAME_LIST.get(
         str(_code),
-        {"formal alias": []})['formal alias']
+        {'formal alias': []})['formal alias']
     )
     if formal_alias:
         formal_alias = auto_width(
-            "formal alias: " + formal_alias,
+            'formal alias: ' + formal_alias,
             i_font,
             w-35
         )
@@ -530,9 +529,9 @@ def generate_a_image(w, h, bar_height, _code, groups, group_lens, code_index,
         formal_alias_height = 0
         formal_alias_y = alias_y + alias_height
 
-    comment = ".".join(get_char_comment(_code))
+    comment = '.'.join(get_char_comment(_code))
     if comment:
-        comment = auto_width("comment: " + comment + ".", i_font, w-35)
+        comment = auto_width('comment: ' + comment + '.', i_font, w-35)
         bbox = draw.textbbox(xy=(0, 0), text=comment, font=i_font)
         comment_height = bbox[3] - bbox[1]
         comment_y = formal_alias_y + formal_alias_height + 5
@@ -541,12 +540,12 @@ def generate_a_image(w, h, bar_height, _code, groups, group_lens, code_index,
         comment_height = 0
         comment_y = formal_alias_y + formal_alias_height
 
-    cross_ref = ", ".join(NAME_LIST.get(
+    cross_ref = ', '.join(NAME_LIST.get(
         str(_code),
-        {"cross ref": []})['cross ref']
+        {'cross ref': []})['cross ref']
     )
     if cross_ref:
-        cross_ref = auto_width("cross ref: " + cross_ref, i_font, w-35)
+        cross_ref = auto_width('cross ref: ' + cross_ref, i_font, w-35)
         bbox = draw.textbbox(xy=(0, 0), text=cross_ref, font=i_font)
         cross_ref_height = bbox[3] - bbox[1]
         cross_ref_y = comment_y + comment_height + 5
@@ -555,12 +554,12 @@ def generate_a_image(w, h, bar_height, _code, groups, group_lens, code_index,
         cross_ref_height = 0
         cross_ref_y = comment_y + comment_height
 
-    variation = ", ".join(NAME_LIST.get(
+    variation = ', '.join(NAME_LIST.get(
         str(_code),
-        {"variation": []})['variation']
+        {'variation': []})['variation']
     )
     if variation:
-        variation = auto_width("variation: " + variation, i_font, w-35)
+        variation = auto_width('variation: ' + variation, i_font, w-35)
         bbox = draw.textbbox(xy=(0, 0), text=variation, font=i_font)
         variation_height = bbox[3] - bbox[1]
         variation_y = cross_ref_y + cross_ref_height + 5
@@ -569,13 +568,13 @@ def generate_a_image(w, h, bar_height, _code, groups, group_lens, code_index,
         variation_height = 0
         variation_y = cross_ref_y + cross_ref_height
 
-    decomposition = ", ".join(NAME_LIST.get(
+    decomposition = ', '.join(NAME_LIST.get(
         str(_code),
-        {"decomposition": []})['decomposition']
+        {'decomposition': []})['decomposition']
     )
     if decomposition:
         decomposition = auto_width(
-            "decomposition: " + decomposition,
+            'decomposition: ' + decomposition,
             i_font,
             w-35
         )
@@ -592,13 +591,13 @@ def generate_a_image(w, h, bar_height, _code, groups, group_lens, code_index,
         decomposition_height = 0
         decomposition_y = variation_y + variation_height
 
-    compat_mapping = ", ".join(NAME_LIST.get(
+    compat_mapping = ', '.join(NAME_LIST.get(
         str(_code),
-        {"compat mapping": []})['compat mapping']
+        {'compat mapping': []})['compat mapping']
     )
     if compat_mapping:
         compat_mapping = auto_width(
-            "compat mapping: " + compat_mapping,
+            'compat mapping: ' + compat_mapping,
             i_font,
             w-35
         )
@@ -615,7 +614,7 @@ def generate_a_image(w, h, bar_height, _code, groups, group_lens, code_index,
         compat_mapping_height = 0
         compat_mapping_y = decomposition_y + decomposition_height
 
-    version = "version: " + get_char_version(_code)
+    version = 'version: ' + get_char_version(_code)
     draw.text(
         (35, compat_mapping_y + compat_mapping_height + 5),
         version,
@@ -646,19 +645,19 @@ def generate_a_image(w, h, bar_height, _code, groups, group_lens, code_index,
         draw.text((x, y), text, font=font, fill=textc)
     else:
         if _code in NOT_CHAR:
-            text = f"非字符 {code}"
+            text = f'非字符 {code}'
         elif 0xD800 <= _code <= 0xDB7F:
-            text = f"高位替代字符 {code}"
+            text = f'高位替代字符 {code}'
         elif 0xDB80 <= _code <= 0xDBFF:
-            text = f"高位私用替代字符 {code}"
+            text = f'高位私用替代字符 {code}'
         elif 0xDC00 <= _code <= 0xDFFF:
-            text = f"低位替代字符 {code}"
+            text = f'低位替代字符 {code}'
         elif (0xE000 <= _code <= 0xF8FF or
               0xF0000 <= _code <= 0xFFFFD or
               0x100000 <= _code <= 0x10FFFD):
-            text = f"私用区字符 {code}"
+            text = f'私用区字符 {code}'
         else:
-            text = f"未定义字符 {code}"
+            text = f'未定义字符 {code}'
         bbox = o_font.getbbox(text)
         text_width = bbox[2] - bbox[0]
         text_height = bbox[3] - bbox[1]
@@ -666,13 +665,13 @@ def generate_a_image(w, h, bar_height, _code, groups, group_lens, code_index,
         y = h/2 - text_height/2
         draw.text((x, y), text, font=o_font, fill=textc)
 
-    for index, item in enumerate(PLANES):
+    for item in PLANES:
         if item[0][0] <= _code <= item[0][1]:
             plane = item[1]
             break
 
     plane_num, plane_en, plane_cn = (
-        f"{plane[0]}({plane[1]})",
+        f'{plane[0]}({plane[1]})',
         plane[2],
         plane[3]
     )
@@ -729,7 +728,7 @@ def generate_unicode_flash(width, height, bar_height, out_path, codes, fps, _fon
 
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     video_writer = cv2.VideoWriter(
-        os.path.join(CUR_FOLDER, 'res.mp4'),
+        out_path,
         fourcc,
         fps,
         (width, height)
@@ -741,7 +740,7 @@ def generate_unicode_flash(width, height, bar_height, out_path, codes, fps, _fon
                                      c_font, b_font, be_font, o_font, r_font, h_font, n_font, fn_font, i_font, p_font,
                                      fonts, last_type, show_private, show_undefined)
         except OSError:
-            print(f"在U+{hex(code)[2:].upper().zfill(4)}处发生raster overflow，已跳过。")
+            print(f'在U+{hex(code)[2:].upper().zfill(4)}处发生raster overflow，已跳过。')
             continue
         img_cv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
         video_writer.write(img_cv)
@@ -749,12 +748,19 @@ def generate_unicode_flash(width, height, bar_height, out_path, codes, fps, _fon
     video_writer.release()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     import argparse
+    from argparse_range import range_action
 
     def _ve(v):
-        raise ValueError(f"无效Unicode码位 {v}")
-    parser = argparse.ArgumentParser(description="这是一个Unicode快闪生成脚本")
+        raise ValueError(f'无效Unicode码位 {v}')
+
+    def hex_number(number):
+        if isinstance(number, int):
+            return number
+        return int(number, 16)
+
+    parser = argparse.ArgumentParser(description='这是一个Unicode快闪生成脚本')
     parser.add_argument('fps', type=float,
                         help='帧率，建议15，可以为小数')
     parser.add_argument('-wt', '--width', type=int, default=1920,
@@ -763,11 +769,11 @@ if __name__ == "__main__":
                         help='视频宽度，默认1080')
     parser.add_argument('-bh', '--bar_height', type=int, default=36,
                         help='顶部进度条高度，默认36')
-    parser.add_argument('-f', '--fonts', type=str, nargs="*", default=[],
+    parser.add_argument('-f', '--fonts', type=str, nargs='*', default=[],
                         help='字体路径列表，按输入顺序计算优先级')
     parser.add_argument('-op', '--out_path', type=str,
-                        default=os.path.join(CUR_FOLDER, "res.mp4"),
-                        help="生成视频的路径")
+                        default=os.path.join(CUR_FOLDER, 'res.mp4'),
+                        help='生成视频的路径')
     parser.add_argument('-sp', '--show_private', action='store_true',
                         help='展示在字体中有字形的私用区字符')
     parser.add_argument('-sng', '--skip_no_glyph', action='store_true',
@@ -782,11 +788,16 @@ if __name__ == "__main__":
                              help='展示在自定义字体中有字形的未定义字符、非字符、代理字符等')
     last_group = parser.add_mutually_exclusive_group()
     last_group.add_argument('-um', '--use_mlst', action='store_true',
-                            help="使用MonuLast(典迹末境)字体")
+                            help='使用MonuLast(典迹末境)字体')
     last_group.add_argument('-ul', '--use_last', action='store_true',
-                            help="使用LastResort(最后手段)字体")
+                            help='使用LastResort(最后手段)字体')
     chars_group = parser.add_mutually_exclusive_group(required=True)
-    chars_group.add_argument('-r', '--rang', type=str, nargs=2,
+    chars_group.add_argument('-r', '--rang', type=hex_number,
+                             nargs=2, action=range_action(
+                                 0, 0x10FFFF,
+                                 range_formatter=lambda i: hex(i)
+                                 .replace('0x', '').upper()
+                             ),
                              help='快闪字符的范围，不带0x的十六进制数')
     chars_group.add_argument('-fcf', '--from_code_file',
                              type=argparse.FileType('r'),
@@ -800,50 +811,50 @@ if __name__ == "__main__":
 
     # 要用到的字体
     main_fonts = [
-        os.path.join(CUR_FOLDER, "CtrlCtrl.ttf"),
-        os.path.join(CUR_FOLDER, "NotoUnicode.ttf"),
-        os.path.join(CUR_FOLDER, "MonuHani.ttf"),
-        os.path.join(CUR_FOLDER, "MonuHanp.ttf"),
-        os.path.join(CUR_FOLDER, "MonuHan2.ttf"),
-        os.path.join(CUR_FOLDER, "MonuHan3.ttf"),
-        os.path.join(CUR_FOLDER, "MonuTemp.ttf"),
+        os.path.join(CUR_FOLDER, 'CtrlCtrl.ttf'),
+        os.path.join(CUR_FOLDER, 'NotoUnicode.ttf'),
+        os.path.join(CUR_FOLDER, 'MonuHani.ttf'),
+        os.path.join(CUR_FOLDER, 'MonuHanp.ttf'),
+        os.path.join(CUR_FOLDER, 'MonuHan2.ttf'),
+        os.path.join(CUR_FOLDER, 'MonuHan3.ttf'),
+        os.path.join(CUR_FOLDER, 'MonuTemp.ttf'),
     ]
     subsidiary_fonts = [
-        (os.path.join(CUR_FOLDER, "NotoSerifTangut.ttf"), '17000..18AFF,18D00..18D7F'),
-        (os.path.join(CUR_FOLDER, "SegoeUIHistoric.ttf"), '700..74F,1680..169F,10280..102DF,10330..1034F,10380..1047F,10800..1085F,10900..1093F,10A60..10A7F,10B40..10B7F,10C00..10C4F,12400..1247F'),
-        (os.path.join(CUR_FOLDER, "MVBoli.ttf"), '780..7BF'),
-        (os.path.join(CUR_FOLDER, "Ebrima.ttf"), '7C0..7FF,1200..139F,2D30..2DDF,A500..A63F,AB00..AB2F,10480..104AF,1E900..1E95F'),
-        (os.path.join(CUR_FOLDER, "NirmalaUI.ttf"), 'B80..BFF,1C50..1C7F,ABC0..ABFF,110D0..110FF'),
-        (os.path.join(CUR_FOLDER, "LeelawadeeUI.ttf"), 'E00..E7F,1780..17FF,19E0..1A1F'),
-        (os.path.join(CUR_FOLDER, "MyanmarText.ttf"), '1000..109F,A9E0..A9FF,AA60..AA7F'),
-        (os.path.join(CUR_FOLDER, "Calibri.ttf"), '10A0..10FF,1C90..1CBF,2D00..2D2F'),
-        (os.path.join(CUR_FOLDER, "MalgunGothic.ttf"), '1100..11FF,3130..318F,A960..A97F,AC00..D7FF'),
-        (os.path.join(CUR_FOLDER, "Gadugi.ttf"), '13A0..167F,18B0..18FF,AB70..ABBF,104B0..104FF'),
-        (os.path.join(CUR_FOLDER, "MicrosoftTaiLe.ttf"), '1950..197F'),
-        (os.path.join(CUR_FOLDER, "MicrosoftNewTaiLue.ttf"), '1980..19DF'),
-        (os.path.join(CUR_FOLDER, "SegoeUISymbol.ttf"), '2190..22FF,2400..2AFF,2C80..2CFF,4DC0..4DFF,1D300..1D35F,1D400..1D7FF,1F030..1F0FF,1F650..1F67F'),
-        (os.path.join(CUR_FOLDER, "微软雅黑.ttf"), '3040..30FF,3190..319F,31F0..31FF,FE10..FE1F,FE30..FE6F'),
-        (os.path.join(CUR_FOLDER, "YuGothic.ttf"), '3300..33FF'),
-        (os.path.join(CUR_FOLDER, "MicrosoftYiBaiti.ttf"), 'A000..A4CF'),
-        (os.path.join(CUR_FOLDER, "SegoeUI.ttf"), 'A4D0..A4FF,A700..A71F'),
-        (os.path.join(CUR_FOLDER, "MicrosoftPhagsPa.ttf"), 'A840..A87F'),
-        (os.path.join(CUR_FOLDER, "JavaneseText.ttf"), 'A980..A9DF'),
-        (os.path.join(CUR_FOLDER, "MicrosoftJhengHei.ttf"), 'FF00..FFEF'),
-        (os.path.join(CUR_FOLDER, "SegoeUIEmoji.ttf"), '1F000..1F02F,1F600..1F64F')
+        (os.path.join(CUR_FOLDER, 'NotoSerifTangut.ttf'), '17000..18AFF,18D00..18D7F'),
+        (os.path.join(CUR_FOLDER, 'SegoeUIHistoric.ttf'), '700..74F,1680..169F,10280..102DF,10330..1034F,10380..1047F,10800..1085F,10900..1093F,10A60..10A7F,10B40..10B7F,10C00..10C4F,12400..1247F'),
+        (os.path.join(CUR_FOLDER, 'MVBoli.ttf'), '780..7BF'),
+        (os.path.join(CUR_FOLDER, 'Ebrima.ttf'), '7C0..7FF,1200..139F,2D30..2DDF,A500..A63F,AB00..AB2F,10480..104AF,1E900..1E95F'),
+        (os.path.join(CUR_FOLDER, 'NirmalaUI.ttf'), 'B80..BFF,1C50..1C7F,ABC0..ABFF,110D0..110FF'),
+        (os.path.join(CUR_FOLDER, 'LeelawadeeUI.ttf'), 'E00..E7F,1780..17FF,19E0..1A1F'),
+        (os.path.join(CUR_FOLDER, 'MyanmarText.ttf'), '1000..109F,A9E0..A9FF,AA60..AA7F'),
+        (os.path.join(CUR_FOLDER, 'Calibri.ttf'), '10A0..10FF,1C90..1CBF,2D00..2D2F'),
+        (os.path.join(CUR_FOLDER, 'MalgunGothic.ttf'), '1100..11FF,3130..318F,A960..A97F,AC00..D7FF'),
+        (os.path.join(CUR_FOLDER, 'Gadugi.ttf'), '13A0..167F,18B0..18FF,AB70..ABBF,104B0..104FF'),
+        (os.path.join(CUR_FOLDER, 'MicrosoftTaiLe.ttf'), '1950..197F'),
+        (os.path.join(CUR_FOLDER, 'MicrosoftNewTaiLue.ttf'), '1980..19DF'),
+        (os.path.join(CUR_FOLDER, 'SegoeUISymbol.ttf'), '2190..22FF,2400..2AFF,2C80..2CFF,4DC0..4DFF,1D300..1D35F,1D400..1D7FF,1F030..1F0FF,1F650..1F67F'),
+        (os.path.join(CUR_FOLDER, '微软雅黑.ttf'), '3040..30FF,3190..319F,31F0..31FF,FE10..FE1F,FE30..FE6F'),
+        (os.path.join(CUR_FOLDER, 'YuGothic.ttf'), '3300..33FF'),
+        (os.path.join(CUR_FOLDER, 'MicrosoftYiBaiti.ttf'), 'A000..A4CF'),
+        (os.path.join(CUR_FOLDER, 'SegoeUI.ttf'), 'A4D0..A4FF,A700..A71F'),
+        (os.path.join(CUR_FOLDER, 'MicrosoftPhagsPa.ttf'), 'A840..A87F'),
+        (os.path.join(CUR_FOLDER, 'JavaneseText.ttf'), 'A980..A9DF'),
+        (os.path.join(CUR_FOLDER, 'MicrosoftJhengHei.ttf'), 'FF00..FFEF'),
+        (os.path.join(CUR_FOLDER, 'SegoeUIEmoji.ttf'), '1F000..1F02F,1F600..1F64F')
     ]
-    block_name_font_path = os.path.join(CUR_FOLDER, "SarasaGothicSC-Regular.ttf")
-    block_name_en_font_path = os.path.join(CUR_FOLDER, "SarasaGothicSC-Regular.ttf")
-    range_font_path = os.path.join(CUR_FOLDER, "SarasaGothicSC-Regular.ttf")
-    code_font_path = os.path.join(CUR_FOLDER, "monaco.ttf")
-    name_font_path = os.path.join(CUR_FOLDER, "SarasaGothicSC-Regular.ttf")
-    hex_font_path = os.path.join(CUR_FOLDER, "monaco.ttf")
-    font_name_font_path = os.path.join(CUR_FOLDER, "微软雅黑.ttf")
-    info_font_path = os.path.join(CUR_FOLDER, "SarasaGothicSC-Regular.ttf")
-    plane_font_path = os.path.join(CUR_FOLDER, "SarasaGothicSC-Regular.ttf")
-    other_font_path = os.path.join(CUR_FOLDER, "SarasaGothicSC-Regular.ttf")
+    block_name_font_path = os.path.join(CUR_FOLDER, 'SarasaGothicSC-Regular.ttf')
+    block_name_en_font_path = os.path.join(CUR_FOLDER, 'SarasaGothicSC-Regular.ttf')
+    range_font_path = os.path.join(CUR_FOLDER, 'SarasaGothicSC-Regular.ttf')
+    code_font_path = os.path.join(CUR_FOLDER, 'monaco.ttf')
+    name_font_path = os.path.join(CUR_FOLDER, 'SarasaGothicSC-Regular.ttf')
+    hex_font_path = os.path.join(CUR_FOLDER, 'monaco.ttf')
+    font_name_font_path = os.path.join(CUR_FOLDER, '微软雅黑.ttf')
+    info_font_path = os.path.join(CUR_FOLDER, 'SarasaGothicSC-Regular.ttf')
+    plane_font_path = os.path.join(CUR_FOLDER, 'SarasaGothicSC-Regular.ttf')
+    other_font_path = os.path.join(CUR_FOLDER, 'SarasaGothicSC-Regular.ttf')
 
-    font_path_mlst = os.path.join(CUR_FOLDER, "MonuLast.ttf")
-    font_path_last = os.path.join(CUR_FOLDER, "LastResort.ttf")
+    font_path_mlst = os.path.join(CUR_FOLDER, 'MonuLast.ttf')
+    font_path_last = os.path.join(CUR_FOLDER, 'LastResort.ttf')
     tfont_mlst = TTFont(font_path_mlst)
     tfont_last = TTFont(font_path_last)
     font_mlst = ImageFont.truetype(font_path_mlst, EXAMPLE_FONT_SIZE)
@@ -880,18 +891,13 @@ if __name__ == "__main__":
     p_font = ImageFont.truetype(plane_font_path, 30)
 
     if args.rang:
-        if not (
-            UNICODE_RE.search(args.rang[0]) and
-            UNICODE_RE.search(args.rang[1])
-        ):
-            raise ValueError('Unicode码位无效')
-        s = int(args.rang[0], 16)
-        e = int(args.rang[1], 16)
-        codes = list(range(s, e+1))
+        codes = list(range(
+            args.rang[0], args.rang[1] + 1
+        ))
     elif args.from_code_file:
         codes = list(map(
             lambda v: int(v, 16) if UNICODE_RE.search(v) else _ve(v),
-            args.from_code_file.read().split(","))
+            args.from_code_file.read().split(','))
         )
     elif args.from_text_file:
         codes = list(map(lambda char: ord(char), args.from_text_file.read()))
