@@ -12,6 +12,8 @@ import bisect
 import itertools
 
 # 常量的定义
+EXAMPLE_FONT_SIZE = 220
+
 UNICODE_RE = re.compile(r'^([0-9a-fA-F]|10)?[0-9a-fA-F]{0,4}$')
 
 CUR_FOLDER = os.path.dirname(__file__)
@@ -27,7 +29,7 @@ NOT_CHAR = [
 ]
 NOT_CHAR.extend(range(0xFDD0, 0xFDF0))
 with open(
-    os.path.join(CUR_FOLDER, 'Blocks.csv'),
+    os.path.join(CUR_FOLDER, 'ToolFiles', 'Blocks.csv'),
     encoding='utf-8'
 ) as blocks_csv:
     reader = list(csv.reader(blocks_csv, delimiter='|'))
@@ -43,7 +45,7 @@ with open(
     BLOCK_NAMES = [line[2] for line in reader]
 
 with open(
-    os.path.join(CUR_FOLDER, 'Planes.csv'),
+    os.path.join(CUR_FOLDER, 'ToolFiles', 'Planes.csv'),
     encoding='utf-8'
 ) as blocks_csv:
     reader = list(csv.reader(blocks_csv, delimiter='|'))
@@ -56,33 +58,23 @@ with open(
 
 
 NAME_LIST = json.load(open(
-    os.path.join(CUR_FOLDER, 'NameList.json'),
+    os.path.join(CUR_FOLDER, 'ToolFiles', 'NamesList.json'),
     encoding='utf8'
 ))
 DEFINED_CHARACTER_LIST = set(json.load(open(
-    os.path.join(CUR_FOLDER, 'DefinedCharacterList.json'),
+    os.path.join(CUR_FOLDER, 'ToolFiles', 'DefinedCharacterList.json'),
     encoding='utf8'
 )))
-EXAMPLE_FONT_SIZE = 220
-VARI_VIRAM_PUNCTUATION4 = {
-    0x9E4,
-    0xA64,
-    0xAE4,
-    0xB64,
-    0xBE4,
-    0xC64,
-    0xCE4,
-    0xD64
-}
-VARI_VIRAM_PUNCTUATION5 = {
-    0x9E5,
-    0xA65,
-    0xAE5,
-    0xB65,
-    0xBE5,
-    0xC65,
-    0xCE5,
-    0xD65
+FONTS = json.load(open(
+    os.path.join(CUR_FOLDER, 'ToolFiles', 'FontFallback.json'),
+    encoding='utf8'
+))
+FONTS = {
+    k: (set(v), ImageFont.truetype(
+        os.path.join(CUR_FOLDER, 'fonts', k + '.ttf'),
+        EXAMPLE_FONT_SIZE
+    ))
+    for k, v in FONTS.items()
 }
 
 VERSION_RANGES = [
@@ -353,22 +345,6 @@ def generate_a_image(w, h, bar_height, _code, groups, group_lens, code_index,
         text = '\u240A'
     elif _code == 0xD:
         text = '\u240D'
-    elif _code in VARI_VIRAM_PUNCTUATION4:
-        text = '\u0964'
-        font = main_fonts[1][2]
-        font_name = main_fonts[1][1]
-    elif _code in VARI_VIRAM_PUNCTUATION5:
-        text = '\u0965'
-        font = main_fonts[1][2]
-        font_name = main_fonts[1][1]
-    elif _code == 0x2072:
-        text = '\u00B2'
-        font = main_fonts[1][2]
-        font_name = main_fonts[1][1]
-    elif _code == 0x2073:
-        text = '\u00B3'
-        font = main_fonts[1][2]
-        font_name = main_fonts[1][1]
     else:
         text = chr(_code)
     utf8 = 'UTF-8: ' + gap(to_utf8_hex(_code))
@@ -386,19 +362,12 @@ def generate_a_image(w, h, bar_height, _code, groups, group_lens, code_index,
             show_private and is_private_use(_code) or
             not is_private_use(_code)
         ):
-            for cmap, name, main_font in main_fonts:
-                if _code in cmap:
-                    font = main_font
-                    font_name = name
+            for font_name_ in FONTS:
+                can_display_chars, font_ = FONTS[font_name_]
+                if _code in can_display_chars:
+                    font = font_
+                    font_name = font_name_
                     break
-            else:
-                if is_defined(_code):
-                    for subsidiary_font, name, rangs in subsidiary_fonts:
-                        for rang in rangs:
-                            if rang[0] <= _code <= rang[1]:
-                                font = subsidiary_font
-                                font_name = name
-                                break
         if font is None:
             if last_type == 2:
                 font = font_mlst
@@ -622,7 +591,7 @@ def generate_a_image(w, h, bar_height, _code, groups, group_lens, code_index,
         fill=textc
     )
 
-    if (is_defined(_code) and not is_private_use(_code)) or last_type:
+    if font is not None and (is_defined(_code) and not is_private_use(_code)) or last_type:
         bbox = font.getbbox(text)
         text_width = bbox[2] - bbox[0]
         text_height = bbox[3] - bbox[1]
@@ -810,38 +779,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # 要用到的字体
-    main_fonts = [
-        os.path.join(CUR_FOLDER, 'CtrlCtrl.ttf'),
-        os.path.join(CUR_FOLDER, 'NotoUnicode.ttf'),
-        os.path.join(CUR_FOLDER, 'MonuHani.ttf'),
-        os.path.join(CUR_FOLDER, 'MonuHanp.ttf'),
-        os.path.join(CUR_FOLDER, 'MonuHan2.ttf'),
-        os.path.join(CUR_FOLDER, 'MonuHan3.ttf'),
-        os.path.join(CUR_FOLDER, 'MonuTemp.ttf'),
-    ]
-    subsidiary_fonts = [
-        (os.path.join(CUR_FOLDER, 'NotoSerifTangut.ttf'), '17000..18AFF,18D00..18D7F'),
-        (os.path.join(CUR_FOLDER, 'SegoeUIHistoric.ttf'), '700..74F,1680..169F,10280..102DF,10330..1034F,10380..1047F,10800..1085F,10900..1093F,10A60..10A7F,10B40..10B7F,10C00..10C4F,12400..1247F'),
-        (os.path.join(CUR_FOLDER, 'MVBoli.ttf'), '780..7BF'),
-        (os.path.join(CUR_FOLDER, 'Ebrima.ttf'), '7C0..7FF,1200..139F,2D30..2DDF,A500..A63F,AB00..AB2F,10480..104AF,1E900..1E95F'),
-        (os.path.join(CUR_FOLDER, 'NirmalaUI.ttf'), 'B80..BFF,1C50..1C7F,ABC0..ABFF,110D0..110FF'),
-        (os.path.join(CUR_FOLDER, 'LeelawadeeUI.ttf'), 'E00..E7F,1780..17FF,19E0..1A1F'),
-        (os.path.join(CUR_FOLDER, 'MyanmarText.ttf'), '1000..109F,A9E0..A9FF,AA60..AA7F'),
-        (os.path.join(CUR_FOLDER, 'Calibri.ttf'), '10A0..10FF,1C90..1CBF,2D00..2D2F'),
-        (os.path.join(CUR_FOLDER, 'MalgunGothic.ttf'), '1100..11FF,3130..318F,A960..A97F,AC00..D7FF'),
-        (os.path.join(CUR_FOLDER, 'Gadugi.ttf'), '13A0..167F,18B0..18FF,AB70..ABBF,104B0..104FF'),
-        (os.path.join(CUR_FOLDER, 'MicrosoftTaiLe.ttf'), '1950..197F'),
-        (os.path.join(CUR_FOLDER, 'MicrosoftNewTaiLue.ttf'), '1980..19DF'),
-        (os.path.join(CUR_FOLDER, 'SegoeUISymbol.ttf'), '2190..22FF,2400..2AFF,2C80..2CFF,4DC0..4DFF,1D300..1D35F,1D400..1D7FF,1F030..1F0FF,1F650..1F67F'),
-        (os.path.join(CUR_FOLDER, '微软雅黑.ttf'), '3040..30FF,3190..319F,31F0..31FF,FE10..FE1F,FE30..FE6F'),
-        (os.path.join(CUR_FOLDER, 'YuGothic.ttf'), '3300..33FF'),
-        (os.path.join(CUR_FOLDER, 'MicrosoftYiBaiti.ttf'), 'A000..A4CF'),
-        (os.path.join(CUR_FOLDER, 'SegoeUI.ttf'), 'A4D0..A4FF,A700..A71F'),
-        (os.path.join(CUR_FOLDER, 'MicrosoftPhagsPa.ttf'), 'A840..A87F'),
-        (os.path.join(CUR_FOLDER, 'JavaneseText.ttf'), 'A980..A9DF'),
-        (os.path.join(CUR_FOLDER, 'MicrosoftJhengHei.ttf'), 'FF00..FFEF'),
-        (os.path.join(CUR_FOLDER, 'SegoeUIEmoji.ttf'), '1F000..1F02F,1F600..1F64F')
-    ]
     block_name_font_path = os.path.join(CUR_FOLDER, 'SarasaGothicSC-Regular.ttf')
     block_name_en_font_path = os.path.join(CUR_FOLDER, 'SarasaGothicSC-Regular.ttf')
     range_font_path = os.path.join(CUR_FOLDER, 'SarasaGothicSC-Regular.ttf')
@@ -861,23 +798,6 @@ if __name__ == '__main__':
     font_last = ImageFont.truetype(font_path_last, EXAMPLE_FONT_SIZE)
     font_name_mlst = get_font_name(tfont_mlst['name'].names)
     font_name_last = get_font_name(tfont_last['name'].names)
-
-    main_fonts = [(p, TTFont(p)) for p in main_fonts]
-    main_fonts = [(
-        get_all_codes_from_font(tf),
-        get_font_name(tf['name'].names),
-        ImageFont.truetype(p, EXAMPLE_FONT_SIZE)
-    ) for p, tf in main_fonts]
-    subsidiary_fonts = [(
-        ImageFont.truetype(p, EXAMPLE_FONT_SIZE),
-        get_font_name(TTFont(p)['name'].names),
-        list(map(
-            lambda i: tuple(
-                map(lambda j: int(j, 16), i.split('..'))
-            ),
-            r.split(','))
-        )
-    ) for p, r in subsidiary_fonts]
 
     c_font = ImageFont.truetype(code_font_path, 40)
     b_font = ImageFont.truetype(block_name_font_path, 45)
