@@ -237,7 +237,6 @@ def get_group(group, group_lens, index):
     for i in range(0, len(group_lens)):
         if sum(group_lens[:i + 1]) >= index + 1:
             return group[i], index - sum(group_lens[:i])
-    return
 
 
 # 编码相关的函数

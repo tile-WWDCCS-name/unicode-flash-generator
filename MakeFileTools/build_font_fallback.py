@@ -18,6 +18,7 @@ fonts: list[str] = [
     'NotoSansKR',
     'Monu-Temp',
     'MonuHanp_3_55Ra_L3',
+    'NotoEmoji-Regular',
     'SegoeUI',
     'SegoeUISymbol',
     'SegoeUIHistoric',
@@ -61,3 +62,5 @@ json.dump(
     # indent=2,
     ensure_ascii=False
 )
+
+print(sorted(list(DEFINED_CHARACTER_LIST - set(already_can_display_codes))))
