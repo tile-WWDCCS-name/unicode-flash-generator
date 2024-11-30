@@ -323,7 +323,6 @@ def merge_iterables(*iterables):
 def gap(s):
     return ' '.join([s[i:i+2] for i in range(0, len(s), 2)])
 
-
 # 主要函数
 def generate_a_image(_code,
                      group,
@@ -415,7 +414,7 @@ def generate_a_image(_code,
                 font = font_last
                 font_name = font_name_last
             else:
-                font_name = 'Sarasa-Gothic-SC-Regular'
+                font_name = 'Sarasa-Mono-SC-Regular'
 
     code = 'U+' + hex(_code)[2:].upper().zfill(4)
     image = Image.new('L', (w, h), color=bgc)
@@ -486,7 +485,6 @@ def generate_a_image(_code,
         version
     ]))
     draw.text((margin_left, bar_height + margin_top), t_text, font=top_font, fill=textc)
-
     if (is_defined(_code) and not is_private_use(_code) or last_type
         or show_private and font is not None and is_private_use(_code)
         or show_undefined and font is not None and not is_defined(_code)):
@@ -505,7 +503,6 @@ def generate_a_image(_code,
         else:
             text = f'未定义字符 {code}'
         draw.text((w / 2, h / 2), text, font=cannot_display_default_font, fill=textc, anchor='mm')
-
     return image
 
 
@@ -642,22 +639,13 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # 要用到的字体
-    top_font_path = os.path.join(CUR_FOLDER, 'SarasaGothicSC-Regular.ttf')
-    right_middle_font_path = os.path.join(CUR_FOLDER, 'SarasaGothicSC-Regular.ttf')
-    left_bottom_font_path = os.path.join(CUR_FOLDER, 'SarasaGothicSC-Regular.ttf')
-    middle_bottom_font_path = os.path.join(CUR_FOLDER, 'monaco.ttf')
-    right_bottom_font_path = os.path.join(CUR_FOLDER, 'SarasaGothicSC-Regular.ttf')
-    cannot_display_default_font_path = os.path.join(CUR_FOLDER, 'SarasaGothicSC-Regular.ttf')
-    percent_font_path = os.path.join(CUR_FOLDER, 'monaco.ttf')
-
-    font_path_mlst = os.path.join(CUR_FOLDER, 'MonuLast.ttf')
-    font_path_last = os.path.join(CUR_FOLDER, 'LastResort.ttf')
-    tfont_mlst = TTFont(font_path_mlst)
-    tfont_last = TTFont(font_path_last)
-    font_mlst = ImageFont.truetype(font_path_mlst, EXAMPLE_FONT_SIZE)
-    font_last = ImageFont.truetype(font_path_last, EXAMPLE_FONT_SIZE)
-    font_name_mlst = 'Monu-Last'
-    font_name_last = 'LastResort-Regular'
+    top_font_path = os.path.join(CUR_FOLDER, 'Sarasa-Mono-SC-Regular.ttf')
+    right_middle_font_path = os.path.join(CUR_FOLDER, 'Sarasa-Mono-SC-Regular.ttf')
+    left_bottom_font_path = os.path.join(CUR_FOLDER, 'Sarasa-Mono-SC-Regular.ttf')
+    middle_bottom_font_path = os.path.join(CUR_FOLDER, 'Sarasa-Mono-SC-Regular.ttf')
+    right_bottom_font_path = os.path.join(CUR_FOLDER, 'Sarasa-Mono-SC-Regular.ttf')
+    cannot_display_default_font_path = os.path.join(CUR_FOLDER, 'Sarasa-Mono-SC-Regular.ttf')
+    percent_font_path = os.path.join(CUR_FOLDER, 'Sarasa-Mono-SC-Regular.ttf')
 
     t_font = ImageFont.truetype(top_font_path, 16)
     rm_font = ImageFont.truetype(right_middle_font_path, 25)
@@ -666,6 +654,15 @@ if __name__ == '__main__':
     mb_font = ImageFont.truetype(middle_bottom_font_path, 20)
     cdd_font = ImageFont.truetype(cannot_display_default_font_path, 40)
     p_font = ImageFont.truetype(percent_font_path, 20)
+
+    font_path_mlst = os.path.join(CUR_FOLDER, 'Monu-Last.ttf')
+    font_path_last = os.path.join(CUR_FOLDER, 'LastResort-Regular.ttf')
+    tfont_mlst = TTFont(font_path_mlst)
+    tfont_last = TTFont(font_path_last)
+    font_mlst = ImageFont.truetype(font_path_mlst, EXAMPLE_FONT_SIZE)
+    font_last = ImageFont.truetype(font_path_last, EXAMPLE_FONT_SIZE)
+    font_name_mlst = 'Monu-Last'
+    font_name_last = 'LastResort-Regular'
 
     if args.rang:
         codes = list(range(
