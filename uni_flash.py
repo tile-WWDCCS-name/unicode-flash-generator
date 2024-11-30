@@ -49,12 +49,13 @@ with open(
     encoding='utf-8'
 ) as blocks_csv:
     reader = list(csv.reader(blocks_csv, delimiter='|'))
-    PLANES = {
-        tuple(map(lambda rang: int(rang, 16), line[0].split('..'))): (
-             *line[1:],
-             '-'.join(map(lambda rang: 'U+' + rang, line[0].split('..')))
+    PLANE_START_LIST = [int(line[0].split('..')[0], 16) for line in reader]
+    PLANE_INFOS = [
+        (
+            *line[1:],
+            '-'.join(map(lambda rang: 'U+' + rang, line[0].split('..')))
         ) for line in reader
-    }.items()
+    ]
 
 
 NAME_LIST = json.load(open(
@@ -114,17 +115,8 @@ VERSION_RANGE_END = [i[0][1] for i in VERSION_RANGES]
 
 
 # 字体相关的函数
-def get_font_name(names):
-    for record in names:
-        if (
-            record.nameID == 4 and
-            record.langID == 0x404 and
-            record.toUnicode()
-        ):
-            return record.toStr()
-    for record in names:
-        if record.nameID == 4 and record.toUnicode() != '':
-            return record.toStr()
+def get_font_name(font):
+    return font['name'].getName(6, 3, 1, 1033).string.decode('utf-8').replace('\0', '')
 
 
 def get_all_codes_from_font(font):
@@ -191,28 +183,29 @@ def get_char_version(code):
         return VERSION_RANGES[index][1]
     return NAME_LIST.get(
         str(code),
-        {'version': '<future version>'}
+        {'version': ('<future version>' if (code not in NOT_CHAR
+                                            and not is_private_use(code)
+                                            and not 0xD800 <= code <= 0xDFFF) else '<never>')}
     )['version']
 
 
 def is_defined(code):
     if (
-        code in DEFINED_CHARACTER_LIST or
-        0xE000 <= code <= 0xF8FF or
-        0xF0000 <= code <= 0xFFFFD or
-        0x100000 <= code <= 0x10FFFD
+        code in DEFINED_CHARACTER_LIST
+        or 0xE000 <= code <= 0xF8FF
+        or 0xF0000 <= code <= 0xFFFFD
+        or 0x100000 <= code <= 0x10FFFD
     ):
         return True
     return False
 
 
 def is_private_use(code):
-    if (0xE000 <= code <= 0xF8FF or
-       0xF0000 <= code <= 0xFFFFD or
-       0x100000 <= code <= 0x10FFFD):
+    if (0xE000 <= code <= 0xF8FF
+        or 0xF0000 <= code <= 0xFFFFD
+        or 0x100000 <= code <= 0x10FFFD):
         return True
     return False
-
 
 # 区段相关的函数
 def get_block(code):
@@ -233,10 +226,10 @@ def get_block_infos(block_name):
     )
 
 
-def get_group(group, group_lens, index):
+def get_group(groups, group_lens, code_index):
     for i in range(0, len(group_lens)):
-        if sum(group_lens[:i + 1]) >= index + 1:
-            return group[i], index - sum(group_lens[:i])
+        if sum(group_lens[:i + 1]) >= code_index + 1:
+            return groups[i], code_index - sum(group_lens[:i])
 
 
 # 编码相关的函数
@@ -300,13 +293,14 @@ def auto_width(string, font, width):
         char = string[i]
         char_width = char_widths[i]
 
-        if char == ' ' and current_width + char_width > width:
-            processed_string += '\n  '
+        if char in ' -' and current_width + char_width > width:
+            processed_string += (char if char != ' ' else '') +  '\n  '
             current_width = (bbox := font.getbbox('  '))[2] - bbox[0]
         elif current_width + char_width > width:
             processed_string_list = list(processed_string)
-            last_space_index = processed_string.rfind(' ')
-            processed_string_list[last_space_index] = '\n  '
+            last_space_index = max(processed_string.rfind(' '), processed_string.rfind('-'))
+            last_space_char = processed_string_list[last_space_index]
+            processed_string_list[last_space_index] = (last_space_char if last_space_char != ' ' else '') + '\n  '
             processed_string = ''.join(processed_string_list)
             processed_string += char
             current_width = (
@@ -331,11 +325,48 @@ def gap(s):
 
 
 # 主要函数
-def generate_a_image(w, h, bar_height, _code, groups, group_lens, code_index,
-                     c_font, b_font, be_font, o_font, r_font, h_font, n_font, fn_font, i_font, p_font,
-                     fonts, last_type, show_private, show_undefined):
+def generate_a_image(_code,
+                     group,
+                     dimensions,
+                     img_properties,
+                     info_fonts,
+                     custom_fonts,
+                     opts):
+    (
+        bar_height,
+        margin_top,
+        margin_bottom,
+        margin_left,
+        margin_right
+    ) = (
+        dimensions['bar_height'],
+        dimensions['margin_top'],
+        dimensions['margin_bottom'],
+        dimensions['margin_left'],
+        dimensions['margin_right'],
+    )
+    w, h = img_properties['width'], img_properties['height']
+    (
+        top_font,
+        right_middle_font,
+        left_bottom_font,
+        middle_bottom_font,
+        right_bottom_font,
+        cannot_display_default_font,
+        percent_font
+    ) = (
+        info_fonts['top'],
+        info_fonts['right_middle'],
+        info_fonts['left_bottom'],
+        info_fonts['middle_bottom'],
+        info_fonts['right_bottom'],
+        info_fonts['cannot_display_default'],
+        info_fonts['percent']
+    )
+    last_type, show_private, show_undefined = opts['last_type'], opts['show_private'], opts['show_undefined']
+
     font = None
-    for _font, font_cmap, _font_name in fonts:
+    for _font, font_cmap, _font_name in custom_fonts:
         if _code in font_cmap:
             font = _font
             font_name = _font_name
@@ -352,9 +383,18 @@ def generate_a_image(w, h, bar_height, _code, groups, group_lens, code_index,
 
     bgc = 20
     textc = 235
-    group, intra_group_index = get_group(groups, group_lens, code_index)
+    group, intra_group_index = get_group(**group)
     block_infos, _ = group
     block_cn_name, block_en_name, block_range = block_infos
+    
+    plane_index = bisect.bisect_right(PLANE_START_LIST, _code) - 1
+    plane = PLANE_INFOS[plane_index]
+
+    plane_num, plane_en, plane_cn = (
+        f'{plane[0]}({plane[1]})',
+        plane[2],
+        plane[3]
+    )
 
     if font is None:
         if (
@@ -375,242 +415,82 @@ def generate_a_image(w, h, bar_height, _code, groups, group_lens, code_index,
                 font = font_last
                 font_name = font_name_last
             else:
-                font_name = 'no font'
+                font_name = 'Sarasa-Gothic-SC-Regular'
 
     code = 'U+' + hex(_code)[2:].upper().zfill(4)
     image = Image.new('L', (w, h), color=bgc)
 
     draw = ImageDraw.Draw(image)
 
-    bbox = c_font.getbbox(code)
-    code_width = bbox[2] - bbox[0]
-    code_height = bbox[3] - bbox[1]
-    code_x = w - code_width - 15
-    code_y = h - code_height*1.5 - 5
-    draw.text((code_x, code_y), code, font=c_font, fill=textc)
+    mb_text = '\n'.join([utf16be, utf16le, utf8])
+    mb_text_left, _ , mb_text_right, _ = draw.textbbox((w / 2, h - 15), mb_text, font=middle_bottom_font, anchor='md', align='center')
+    draw.text((w / 2, h - margin_bottom), mb_text, fill=textc, font=middle_bottom_font, anchor='md', align='center')
 
-    fn = '字体: ' + font_name
-    bbox = fn_font.getbbox(fn)
-    fn_width = bbox[2] - bbox[0]
-    fn_height = bbox[3] - bbox[1]
-    draw.text(
-        (w - fn_width - 15, code_y - fn_height - 5),
-        fn,
-        font=fn_font,
-        fill=textc
-    )
+    fn = auto_width('字体：' + font_name, rb_font, w - mb_text_right - 15)
+    rb_text = '\n'.join([fn, code])
+    draw.text((w - 15, h - margin_bottom), rb_text, font=rb_font, fill=textc, anchor='rd', align='right')
 
-    bbox = h_font.getbbox(utf8)
-    utf8_width = bbox[2] - bbox[0]
-    utf8_height = bbox[3] - bbox[1]
-    utf8_y = h - utf8_height*1.5 - 5
-    draw.text(((w - utf8_width)/2, utf8_y), utf8, fill=textc, font=h_font)
+    block_en = auto_width(block_en_name, left_bottom_font, mb_text_left - 15)
+    name = auto_width(get_char_name(_code), left_bottom_font, mb_text_left - 15)
+    lb_text = '\n'.join([name, block_range, block_cn_name, block_en])
+    draw.text((margin_left, h - margin_bottom), lb_text, fill=textc, font=left_bottom_font, anchor='ld')
 
-    bbox = h_font.getbbox(utf16le)
-    utf16le_width = bbox[2] - bbox[0]
-    utf16le_height = bbox[3] - bbox[1]
-    utf16le_y = utf8_y - utf16le_height*1.5 - 5
-    draw.text(
-        ((w - utf16le_width)/2, utf16le_y),
-        utf16le,
-        fill=textc,
-        font=h_font
-    )
-
-    bbox = h_font.getbbox(utf16be)
-    utf16be_width = bbox[2] - bbox[0]
-    utf16be_height = bbox[3] - bbox[1]
-    draw.text(
-        ((w - utf16be_width)/2, utf16le_y - utf16be_height*1.5 - 5),
-        utf16be,
-        fill=textc,
-        font=h_font
-    )
-
-    block_en = auto_width(block_en_name, n_font, (w - utf8_width)/2)
-    bbox = draw.textbbox(xy=(0, 0), text=block_en, font=be_font)
-    block_en_height = bbox[3] - bbox[1]
-    block_en_y = (
-        h -
-        block_en_height -
-        ((_b := be_font.getbbox('a'))[3] - _b[1])*0.5 -
-        5
-    )
-    draw.text((35, block_en_y), block_en, font=be_font, fill=textc)
-
-    bbox = b_font.getbbox(block_cn_name)
-    block_height = bbox[3] - bbox[1]
-    block_y = block_en_y - block_height - 5
-    draw.text((35, block_y), block_cn_name, font=b_font, fill=textc)
-
-    bbox = r_font.getbbox(block_range)
-    r_height = bbox[3] - bbox[1]
-    r_y = block_y - r_height - 5
-    draw.text((35, r_y), block_range, font=r_font, fill=textc)
-
-    name = auto_width(get_char_name(_code), n_font, w - 35)
-    bbox = draw.textbbox(xy=(0, 0), text=name, font=n_font)
-    name_height = bbox[3] - bbox[1]
-    draw.text((35, r_y-name_height-5), name, font=n_font, fill=textc)
+    rm_text = '\n'.join([plane_cn, plane_en, plane_num])
+    draw.text((w - margin_right, h / 2), rm_text, fill=textc, font=right_middle_font, anchor='rm', align='right')
 
     progress = (intra_group_index + 1) / group[1]
     draw.rectangle([0, 0, round(progress * w), bar_height], textc)
 
     percent = f'{progress * 100: .2f}%'
-    bbox = draw.textbbox(xy=(0, 0), text=percent, font=i_font)
-    percent_height = bbox[3] - bbox[1]
-    percent_width = bbox[2] - bbox[0]
-    percent_y = bar_height + 5
-    draw.text(
-        (w - percent_width - 20, percent_y),
-        percent,
-        font=i_font,
-        fill=textc
-    )
+    percent_left = draw.textbbox((w - 15, bar_height + 15), percent, font=middle_bottom_font, anchor='rt')[0]
+    draw.text((w - margin_right, bar_height + margin_top), percent, font=percent_font, fill=textc, anchor='rt')
 
     alias = ', '.join(get_char_alias(_code))
-    if alias:
-        alias = auto_width('alias: ' + alias, i_font, w-35)
-        bbox = draw.textbbox(xy=(0, 0), text=alias, font=i_font)
-        alias_height = bbox[3] - bbox[1]
-        alias_y = percent_y + percent_height + 5
-        draw.text((35, alias_y), alias, font=i_font, fill=textc)
-    else:
-        alias_height = 0
-        alias_y = percent_y + percent_height
-
     formal_alias = ', '.join(NAME_LIST.get(
         str(_code),
         {'formal alias': []})['formal alias']
     )
-    if formal_alias:
-        formal_alias = auto_width(
-            'formal alias: ' + formal_alias,
-            i_font,
-            w-35
-        )
-        bbox = draw.textbbox(xy=(0, 0), text=formal_alias, font=i_font)
-        formal_alias_height = bbox[3] - bbox[1]
-        formal_alias_y = alias_y + alias_height + 5
-        draw.text((35, formal_alias_y), formal_alias, font=i_font, fill=textc)
-    else:
-        formal_alias_height = 0
-        formal_alias_y = alias_y + alias_height
-
-    comment = '.'.join(get_char_comment(_code))
-    if comment:
-        comment = auto_width('comment: ' + comment + '.', i_font, w-35)
-        bbox = draw.textbbox(xy=(0, 0), text=comment, font=i_font)
-        comment_height = bbox[3] - bbox[1]
-        comment_y = formal_alias_y + formal_alias_height + 5
-        draw.text((35, comment_y), comment, font=i_font, fill=textc)
-    else:
-        comment_height = 0
-        comment_y = formal_alias_y + formal_alias_height
-
+    comment = '; '.join(get_char_comment(_code))
     cross_ref = ', '.join(NAME_LIST.get(
         str(_code),
         {'cross ref': []})['cross ref']
     )
-    if cross_ref:
-        cross_ref = auto_width('cross ref: ' + cross_ref, i_font, w-35)
-        bbox = draw.textbbox(xy=(0, 0), text=cross_ref, font=i_font)
-        cross_ref_height = bbox[3] - bbox[1]
-        cross_ref_y = comment_y + comment_height + 5
-        draw.text((35, cross_ref_y), cross_ref, font=i_font, fill=textc)
-    else:
-        cross_ref_height = 0
-        cross_ref_y = comment_y + comment_height
-
     variation = ', '.join(NAME_LIST.get(
         str(_code),
         {'variation': []})['variation']
     )
-    if variation:
-        variation = auto_width('variation: ' + variation, i_font, w-35)
-        bbox = draw.textbbox(xy=(0, 0), text=variation, font=i_font)
-        variation_height = bbox[3] - bbox[1]
-        variation_y = cross_ref_y + cross_ref_height + 5
-        draw.text((35, variation_y), variation, font=i_font, fill=textc)
-    else:
-        variation_height = 0
-        variation_y = cross_ref_y + cross_ref_height
-
     decomposition = ', '.join(NAME_LIST.get(
         str(_code),
         {'decomposition': []})['decomposition']
     )
-    if decomposition:
-        decomposition = auto_width(
-            'decomposition: ' + decomposition,
-            i_font,
-            w-35
-        )
-        bbox = draw.textbbox(xy=(0, 0), text=decomposition, font=i_font)
-        decomposition_height = bbox[3] - bbox[1]
-        decomposition_y = variation_y + variation_height + 5
-        draw.text(
-            (35, decomposition_y),
-            decomposition,
-            font=i_font,
-            fill=textc
-        )
-    else:
-        decomposition_height = 0
-        decomposition_y = variation_y + variation_height
-
     compat_mapping = ', '.join(NAME_LIST.get(
         str(_code),
         {'compat mapping': []})['compat mapping']
     )
-    if compat_mapping:
-        compat_mapping = auto_width(
-            'compat mapping: ' + compat_mapping,
-            i_font,
-            w-35
-        )
-        bbox = draw.textbbox(xy=(0, 0), text=compat_mapping, font=i_font)
-        compat_mapping_height = bbox[3] - bbox[1]
-        compat_mapping_y = decomposition_y + decomposition_height + 5
-        draw.text(
-            (35, compat_mapping_y),
-            compat_mapping,
-            font=i_font,
-            fill=textc
-        )
-    else:
-        compat_mapping_height = 0
-        compat_mapping_y = decomposition_y + decomposition_height
+    version = '版本：' + get_char_version(_code)
+    alias = auto_width('别名：' + alias, top_font, percent_left - 15) if alias else ''
+    formal_alias = auto_width('正式别名：' + formal_alias, top_font, percent_left - 15) if formal_alias else ''
+    comment = auto_width('说明：' + comment, top_font, percent_left - 15) if comment else ''
+    cross_ref = auto_width('交叉参考：' + cross_ref, top_font, percent_left - 15) if cross_ref else ''
+    variation = auto_width('变体：' + variation, top_font, percent_left - 15) if variation else ''
+    decomposition = auto_width('拆解' + decomposition, top_font, percent_left - 15) if decomposition else ''
+    compat_mapping = auto_width('兼容性映射：' + compat_mapping, top_font, percent_left - 15) if compat_mapping else ''
+    t_text = '\n'.join(filter(bool, [
+        compat_mapping,
+        decomposition,
+        variation,
+        cross_ref,
+        comment,
+        formal_alias,
+        alias,
+        version
+    ]))
+    draw.text((margin_left, bar_height + margin_top), t_text, font=top_font, fill=textc)
 
-    version = 'version: ' + get_char_version(_code)
-    draw.text(
-        (35, compat_mapping_y + compat_mapping_height + 5),
-        version,
-        font=i_font,
-        fill=textc
-    )
-
-    if font is not None and (is_defined(_code) and not is_private_use(_code)) or last_type:
-        bbox = font.getbbox(text)
-        text_width = bbox[2] - bbox[0]
-        text_height = bbox[3] - bbox[1]
-        x = w/2 - text_width/2
-        y = h/2 - text_height/2
-        draw.text((x, y), text, font=font, fill=textc)
-    elif show_private and font is not None and is_private_use(_code):
-        bbox = font.getbbox(text)
-        text_width = bbox[2] - bbox[0]
-        text_height = bbox[3] - bbox[1]
-        x = w/2 - text_width/2
-        y = h/2 - text_height/2
-        draw.text((x, y), text, font=font, fill=textc)
-    elif show_undefined and font is not None and not is_defined(_code):
-        bbox = font.getbbox(text)
-        text_width = bbox[2] - bbox[0]
-        text_height = bbox[3] - bbox[1]
-        x = w/2 - text_width/2
-        y = h/2 - text_height/2
-        draw.text((x, y), text, font=font, fill=textc)
+    if (is_defined(_code) and not is_private_use(_code) or last_type
+        or show_private and font is not None and is_private_use(_code)
+        or show_undefined and font is not None and not is_defined(_code)):
+        draw.text((w / 2, h / 2), text, font=font, fill=textc, anchor='mm')
     else:
         if _code in NOT_CHAR:
             text = f'非字符 {code}'
@@ -620,57 +500,22 @@ def generate_a_image(w, h, bar_height, _code, groups, group_lens, code_index,
             text = f'高位私用替代字符 {code}'
         elif 0xDC00 <= _code <= 0xDFFF:
             text = f'低位替代字符 {code}'
-        elif (0xE000 <= _code <= 0xF8FF or
-              0xF0000 <= _code <= 0xFFFFD or
-              0x100000 <= _code <= 0x10FFFD):
+        elif is_private_use(_code):
             text = f'私用区字符 {code}'
         else:
             text = f'未定义字符 {code}'
-        bbox = o_font.getbbox(text)
-        text_width = bbox[2] - bbox[0]
-        text_height = bbox[3] - bbox[1]
-        x = w/2 - text_width/2
-        y = h/2 - text_height/2
-        draw.text((x, y), text, font=o_font, fill=textc)
-
-    for item in PLANES:
-        if item[0][0] <= _code <= item[0][1]:
-            plane = item[1]
-            break
-
-    plane_num, plane_en, plane_cn = (
-        f'{plane[0]}({plane[1]})',
-        plane[2],
-        plane[3]
-    )
-
-    bbox = p_font.getbbox(plane_en)
-    plane_en_width = bbox[2] - bbox[0]
-    plane_en_height = bbox[3] - bbox[1]
-    plane_en_x = w - plane_en_width - 15
-    plane_en_y = h/2 - plane_en_height/2
-    draw.text((plane_en_x, plane_en_y), plane_en, font=p_font, fill=textc)
-
-    bbox = p_font.getbbox(plane_num)
-    plane_num_width = bbox[2] - bbox[0]
-    plane_num_height = bbox[3] - bbox[1]
-    plane_num_x = w - plane_num_width - 15
-    plane_num_y = plane_en_y - plane_num_height - 5
-    draw.text((plane_num_x, plane_num_y), plane_num, font=p_font, fill=textc)
-
-    bbox = p_font.getbbox(plane_cn)
-    plane_cn_width = bbox[2] - bbox[0]
-    plane_cn_height = bbox[3] - bbox[1]
-    plane_cn_x = w - plane_cn_width - 15
-    plane_cn_y = plane_num_y + plane_cn_height + plane_num_height + 10
-    draw.text((plane_cn_x, plane_cn_y), plane_cn, font=p_font, fill=textc)
+        draw.text((w / 2, h / 2), text, font=cannot_display_default_font, fill=textc, anchor='mm')
 
     return image
 
 
-def generate_unicode_flash(width, height, bar_height, out_path, codes, fps, _fonts,
-                           c_font, b_font, be_font, o_font, r_font, h_font, n_font, fn_font, i_font, p_font,
-                           last_type, show_private, show_undefined):
+def generate_unicode_flash(codes,
+                           out_path,
+                           dimensions,
+                           video_properties,
+                           info_fonts,
+                           custom_font_paths,
+                           opts):
     groups = [
         (
             (*get_block_infos(k)[:-1], ),
@@ -679,18 +524,18 @@ def generate_unicode_flash(width, height, bar_height, out_path, codes, fps, _fon
     ]
     group_lens = [l for _, l in groups]
 
-    fonts = tuple(zip(
+    custom_fonts = tuple(zip(
         map(
             lambda f: ImageFont.truetype(f, EXAMPLE_FONT_SIZE),
-            _fonts
+            custom_font_paths
         ),
         map(
             lambda f: get_all_codes_from_font(TTFont(f)),
-            _fonts
+            custom_font_paths
         ),
         map(
-            lambda f: get_font_name(TTFont(f)['name'].names),
-            _fonts
+            lambda f: get_font_name(TTFont(f)),
+            custom_font_paths
         )
     ))
 
@@ -698,15 +543,26 @@ def generate_unicode_flash(width, height, bar_height, out_path, codes, fps, _fon
     video_writer = cv2.VideoWriter(
         out_path,
         fourcc,
-        fps,
-        (width, height)
+        video_properties['fps'],
+        (video_properties['width'], video_properties['height'])
     )
 
     for code_index, code in enumerate(tqdm(codes)):
         try:
-            image = generate_a_image(width, height, bar_height, code, groups, group_lens, code_index,
-                                     c_font, b_font, be_font, o_font, r_font, h_font, n_font, fn_font, i_font, p_font,
-                                     fonts, last_type, show_private, show_undefined)
+            image = generate_a_image(code,
+                                     {
+                                         'groups': groups,
+                                         'group_lens': group_lens,
+                                         'code_index': code_index
+                                     },
+                                     dimensions,
+                                     {
+                                         'width': video_properties['width'],
+                                         'height': video_properties['height']
+                                     },
+                                     info_fonts,
+                                     custom_fonts,
+                                     opts)
         except OSError:
             print(f'在U+{hex(code)[2:].upper().zfill(4)}处发生raster overflow，已跳过。')
             continue
@@ -748,6 +604,14 @@ if __name__ == '__main__':
                         help='跳过在所有自定义字体中都没有字形的字符')
     parser.add_argument('-sl', '--skip_long', action='store_true',
                         help='跳过U+323B0-U+DFFFF')
+    parser.add_argument('-mt', '--margin_top', type=int, default=15,
+                        help='上边距，默认15')
+    parser.add_argument('-mb', '--margin_bottom', type=int, default=15,
+                        help='下边距，默认15')
+    parser.add_argument('-ml', '--margin_left', type=int, default=30,
+                        help='左边距，默认30')
+    parser.add_argument('-mr', '--margin_right', type=int, default=30,
+                        help='右边距，默认30')
 
     undef_group = parser.add_mutually_exclusive_group()
     undef_group.add_argument('-su', '--skip_undefined', action='store_true',
@@ -778,16 +642,13 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # 要用到的字体
-    block_name_font_path = os.path.join(CUR_FOLDER, 'SarasaGothicSC-Regular.ttf')
-    block_name_en_font_path = os.path.join(CUR_FOLDER, 'SarasaGothicSC-Regular.ttf')
-    range_font_path = os.path.join(CUR_FOLDER, 'SarasaGothicSC-Regular.ttf')
-    code_font_path = os.path.join(CUR_FOLDER, 'monaco.ttf')
-    name_font_path = os.path.join(CUR_FOLDER, 'SarasaGothicSC-Regular.ttf')
-    hex_font_path = os.path.join(CUR_FOLDER, 'monaco.ttf')
-    font_name_font_path = os.path.join(CUR_FOLDER, '微软雅黑.ttf')
-    info_font_path = os.path.join(CUR_FOLDER, 'SarasaGothicSC-Regular.ttf')
-    plane_font_path = os.path.join(CUR_FOLDER, 'SarasaGothicSC-Regular.ttf')
-    other_font_path = os.path.join(CUR_FOLDER, 'SarasaGothicSC-Regular.ttf')
+    top_font_path = os.path.join(CUR_FOLDER, 'SarasaGothicSC-Regular.ttf')
+    right_middle_font_path = os.path.join(CUR_FOLDER, 'SarasaGothicSC-Regular.ttf')
+    left_bottom_font_path = os.path.join(CUR_FOLDER, 'SarasaGothicSC-Regular.ttf')
+    middle_bottom_font_path = os.path.join(CUR_FOLDER, 'monaco.ttf')
+    right_bottom_font_path = os.path.join(CUR_FOLDER, 'SarasaGothicSC-Regular.ttf')
+    cannot_display_default_font_path = os.path.join(CUR_FOLDER, 'SarasaGothicSC-Regular.ttf')
+    percent_font_path = os.path.join(CUR_FOLDER, 'monaco.ttf')
 
     font_path_mlst = os.path.join(CUR_FOLDER, 'MonuLast.ttf')
     font_path_last = os.path.join(CUR_FOLDER, 'LastResort.ttf')
@@ -795,19 +656,16 @@ if __name__ == '__main__':
     tfont_last = TTFont(font_path_last)
     font_mlst = ImageFont.truetype(font_path_mlst, EXAMPLE_FONT_SIZE)
     font_last = ImageFont.truetype(font_path_last, EXAMPLE_FONT_SIZE)
-    font_name_mlst = get_font_name(tfont_mlst['name'].names)
-    font_name_last = get_font_name(tfont_last['name'].names)
+    font_name_mlst = 'Monu-Last'
+    font_name_last = 'LastResort-Regular'
 
-    c_font = ImageFont.truetype(code_font_path, 40)
-    b_font = ImageFont.truetype(block_name_font_path, 45)
-    be_font = ImageFont.truetype(block_name_en_font_path, 30)
-    o_font = ImageFont.truetype(other_font_path, 40)
-    r_font = ImageFont.truetype(range_font_path, 40)
-    h_font = ImageFont.truetype(hex_font_path, 25)
-    n_font = ImageFont.truetype(name_font_path, 30)
-    fn_font = ImageFont.truetype(font_name_font_path, 40)
-    i_font = ImageFont.truetype(info_font_path, 30)
-    p_font = ImageFont.truetype(plane_font_path, 30)
+    t_font = ImageFont.truetype(top_font_path, 16)
+    rm_font = ImageFont.truetype(right_middle_font_path, 25)
+    lb_font = ImageFont.truetype(left_bottom_font_path, 25)
+    rb_font = ImageFont.truetype(right_bottom_font_path, 40)
+    mb_font = ImageFont.truetype(middle_bottom_font_path, 20)
+    cdd_font = ImageFont.truetype(cannot_display_default_font_path, 40)
+    p_font = ImageFont.truetype(percent_font_path, 20)
 
     if args.rang:
         codes = list(range(
@@ -845,6 +703,32 @@ if __name__ == '__main__':
             lambda c: c in all_glyphs, codes
         ))
 
-    generate_unicode_flash(args.width, args.height, args.bar_height, args.out_path, codes, args.fps, args.fonts,
-                           c_font, b_font, be_font, o_font, r_font, h_font, n_font, fn_font, i_font, p_font,
-                           (1 if args.use_last else 2 if args.use_mlst else 0), args.show_private, args.show_undefined)
+    generate_unicode_flash(codes,
+                           args.out_path,
+                           {
+                               'bar_height': args.bar_height,
+                               'margin_top': args.margin_top,
+                               'margin_bottom': args.margin_bottom,
+                               'margin_left': args.margin_left,
+                               'margin_right': args.margin_right,
+                           },
+                           {
+                               'width': args.width,
+                               'height': args.height,
+                               'fps': args.fps
+                           },
+                           {
+                              'top': t_font,
+                              'right_middle': rm_font,
+                              'left_bottom': lb_font,
+                              'middle_bottom': mb_font,
+                              'right_bottom': rb_font,
+                              'cannot_display_default': cdd_font,
+                              'percent': p_font
+                           },
+                           args.fonts,
+                           {
+                               'last_type': 1 if args.use_last else 2 if args.use_mlst else 0,
+                               'show_private': args.show_private,
+                               'show_undefined': args.show_undefined
+                           })

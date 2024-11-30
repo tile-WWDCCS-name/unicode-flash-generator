@@ -1,3 +1,6 @@
+"""
+注：本文件由https://github.com/aatifsyed/argparse-range修改而来。
+"""
 import argparse
 from typing import Any, Callable, Iterable, Optional, Sequence, Tuple, TypeVar, Union
 

@@ -147,14 +147,17 @@ Unicode 快闪生成器提供了多种高级设置选项，让您能够精细控
 
 ### 视频参数
 
-- `-wt`, `--width`: 设置视频宽度（默认 1920 像素）
+- `-wt`, `--width`: 设置视频宽度（默认 1920 像素）。
   例：`python uni_flash.py 15 -rang 0 100 -wt 1280`
 
-- `-ht`, `--height`: 设置视频高度（默认 1080 像素）
+- `-ht`, `--height`: 设置视频高度（默认 1080 像素）。
   例：`python uni_flash.py 15 -rang 0 100 -ht 720`
 
-- `-bh`, `--bar_height`: 设置顶部进度条高度（默认 36 像素）
+- `-bh`, `--bar_height`: 设置顶部进度条高度（默认 36 像素）。
   例：`python uni_flash.py 15 -rang 0 100 -bh 50`
+
+- `-mt`, `-mb`, `-ml`, `-mr`(`--margin_top`, `--margin_bottom`, `--margin_left`, `--margin_right`): 设置视频的上、下、左、右边距（上、下边距默认 15 像素， 左、右边距默认 30 像素。边距可以为负，但不推荐）。
+  例：`python uni_flash.py 15 -rang 0 100 -mr 100 -mb 150 -ml -5 -mt 1
 
 ### 字符选择和过滤
 
