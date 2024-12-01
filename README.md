@@ -17,20 +17,14 @@
 1. 确保您的系统已安装以下依赖：
    - `Python 3.x`;
    - `FFmpeg`.
-  
-   使用命令：
 
-   ```bash
-   apt install python ffmpeg
-   ```
- 
-   及Python第三方库：
+2. 确保您的系统已安装以下Python第三方库：
    - `pillow`;
    - `tqdm`;
    - `fonttools`;
    - `opencv-python`;
    - `numpy`.
-   
+
    使用命令：
 
    ```bash
@@ -43,8 +37,7 @@
    apt install opencv-python python-numpy
    ```
 
-2. 克隆此仓库：
-
+3. 克隆此仓库：
    ```bash
    git clone https://github.com/tile-WWDCCS-name/unicode-flash-generator
    cd unicode-flash-generator
