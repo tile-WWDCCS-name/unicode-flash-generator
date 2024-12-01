@@ -395,6 +395,7 @@ def generate_a_image(_code,
         plane[3]
     )
 
+    font_name = 'unknown'
     if font is None:
         if (
             show_private and is_private_use(_code) or
@@ -427,7 +428,7 @@ def generate_a_image(_code,
 
     fn = auto_width('字体：' + font_name, rb_font, w - mb_text_right - 15)
     rb_text = '\n'.join([fn, code])
-    draw.text((w - 15, h - margin_bottom), rb_text, font=rb_font, fill=textc, anchor='rd', align='right')
+    draw.text((w - 15, h - margin_bottom), rb_text, font=right_bottom_font, fill=textc, anchor='rd', align='right')
 
     block_en = auto_width(block_en_name, left_bottom_font, mb_text_left - 15)
     name = auto_width(get_char_name(_code), left_bottom_font, mb_text_left - 15)
@@ -664,6 +665,7 @@ if __name__ == '__main__':
     font_name_mlst = 'Monu-Last'
     font_name_last = 'LastResort-Regular'
 
+    codes = []
     if args.rang:
         codes = list(range(
             args.rang[0], args.rang[1] + 1
