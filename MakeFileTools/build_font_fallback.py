@@ -56,7 +56,7 @@ json.dump(
     open(
         os.path.join(
             os.path.dirname(CUR_FOLDER),
-            'ToolFiles', 'fontFallback.json'
+            'ToolFiles', 'FontFallback.json'
         ), 'w'
     ),
     # indent=2,
