@@ -107,7 +107,7 @@ VERSION_RANGES = [
     ((0x2B735, 0x2B738), '14.0.0'),
     ((0x2B739, 0x2B739), '15.0.0'),
     ((0x31350, 0x323AF), '15.0.0'),
-    ((0x2EBF0, 0x2EE5D), '15.1.0'),
+    ((0x2EBF0, 0x2EE5D), '15.1.0')
 ]
 
 VERSION_RANGE_START = [i[0][0] for i in VERSION_RANGES]
@@ -133,30 +133,30 @@ def get_char_name(code):
     if 0xD800 <= code <= 0xDFFF:
         return f'Surrogate-{code_u}'
     if (
-        0xE000 <= code <= 0xF8FF or
-        0xF0000 <= code <= 0xFFFFD or
-        0x100000 <= code <= 0x10FFFD
+        0xE000 <= code <= 0xF8FF
+        or 0xF0000 <= code <= 0xFFFFD
+        or 0x100000 <= code <= 0x10FFFD
     ):
         return f'Private Use-{code_u}'
     if (
-        0x3400 <= code <= 0x4DBF or
-        0x4E00 <= code <= 0x9FFF or
-        0x20000 <= code <= 0x2A6DF or
-        0x2A700 <= code <= 0x2B738 or
-        0x2B740 <= code <= 0x2B81D or
-        0x2B740 <= code <= 0x2B81D or
-        0x2B820 <= code <= 0x2CEA1 or
-        0x2CEB0 <= code <= 0x2EBE0 or
-        0x2EBF0 <= code <= 0x2EE5D or
-        0x30000 <= code <= 0x3134A or
-        0x31350 <= code <= 0x323AF
+        0x3400 <= code <= 0x4DBF
+        or 0x4E00 <= code <= 0x9FFF
+        or 0x20000 <= code <= 0x2A6DF
+        or 0x2A700 <= code <= 0x2B738
+        or 0x2B740 <= code <= 0x2B81D
+        or 0x2B740 <= code <= 0x2B81D
+        or 0x2B820 <= code <= 0x2CEA1
+        or 0x2CEB0 <= code <= 0x2EBE0
+        or 0x2EBF0 <= code <= 0x2EE5D
+        or 0x30000 <= code <= 0x3134A
+        or 0x31350 <= code <= 0x323AF
     ):
         return f'CJK Unified Ideograph-{code_u}'
     if 0xAC00 <= code <= 0xD7A3:
         return f'Hangul Syllable-{code_u}'
     if (
-        0x17000 <= code <= 0x187F7 or
-        0x18D00 <= code <= 0x18D08
+        0x17000 <= code <= 0x187F7
+        or 0x18D00 <= code <= 0x18D08
     ):
         return f'Tangut-{code_u}'
     return NAME_LIST.get(
@@ -279,33 +279,34 @@ def to_utf16le_hex(code):
 
 
 # 其他函数
-def auto_width(string, font, width):
+def auto_width(string, font, width, indent='  '):
+    if font.getlength(string) <= width:
+        return string
+
     char_widths = [
-        (bbox := font.getbbox(char))[2] - bbox[0] for char in string
+        font.getlength(char) for char in string
     ]
     current_width = 0
+    indent_width = font.getlength(indent)
     processed_string = ''
-
-    if (bbox := font.getbbox(string))[2] - bbox[0] <= width:
-        return string
 
     for i in range(len(string)):
         char = string[i]
         char_width = char_widths[i]
 
         if char in ' -' and current_width + char_width > width:
-            processed_string += (char if char != ' ' else '') +  '\n  '
-            current_width = (bbox := font.getbbox('  '))[2] - bbox[0]
+            processed_string += (char if char != ' ' else '') +  '\n' + indent_width
+            current_width = indent_width
         elif current_width + char_width > width:
             processed_string_list = list(processed_string)
             last_space_index = max(processed_string.rfind(' '), processed_string.rfind('-'))
             last_space_char = processed_string_list[last_space_index]
-            processed_string_list[last_space_index] = (last_space_char if last_space_char != ' ' else '') + '\n  '
+            processed_string_list[last_space_index] = (last_space_char if last_space_char != ' ' else '') + '\n' + indent
             processed_string = ''.join(processed_string_list)
             processed_string += char
             current_width = (
-                sum(char_widths[last_space_index+1:i+1]) +
-                (bbox := font.getbbox('  '))[2] - bbox[0]
+                sum(char_widths[last_space_index+1:i+1])
+                + indent_width
             )
         else:
             processed_string += char
@@ -398,8 +399,8 @@ def generate_a_image(_code,
     font_name = 'unknown'
     if font is None:
         if (
-            show_private and is_private_use(_code) or
-            not is_private_use(_code)
+            show_private and is_private_use(_code)
+            or not is_private_use(_code)
         ):
             for font_name_ in FONTS:
                 can_display_chars, font_ = FONTS[font_name_]
@@ -648,7 +649,7 @@ if __name__ == '__main__':
     cannot_display_default_font_path = os.path.join(CUR_FOLDER, 'Sarasa-Mono-SC-Regular.ttf')
     percent_font_path = os.path.join(CUR_FOLDER, 'Sarasa-Mono-SC-Regular.ttf')
 
-    t_font = ImageFont.truetype(top_font_path, 16)
+    t_font = ImageFont.truetype(top_font_path, 21)
     rm_font = ImageFont.truetype(right_middle_font_path, 25)
     lb_font = ImageFont.truetype(left_bottom_font_path, 25)
     rb_font = ImageFont.truetype(right_bottom_font_path, 40)
@@ -688,8 +689,8 @@ if __name__ == '__main__':
     if skip_long or skip_undefined:
         codes = list(filter(
             lambda code: not (
-                skip_long and 0x323B0 <= code <= 0xDFFFF or
-                skip_undefined and not is_defined(code)
+                skip_long and 0x323B0 <= code <= 0xDFFFF
+                or skip_undefined and not is_defined(code)
             ), codes
         ))
     if skip_no_glyph:
