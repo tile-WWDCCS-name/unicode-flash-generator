@@ -295,7 +295,7 @@ def auto_width(string, font, width, indent='  '):
         char_width = char_widths[i]
 
         if char in ' -' and current_width + char_width > width:
-            processed_string += (char if char != ' ' else '') +  '\n' + indent_width
+            processed_string += (char if char != ' ' else '') +  '\n' + indent
             current_width = indent_width
         elif current_width + char_width > width:
             processed_string_list = list(processed_string)
@@ -332,6 +332,7 @@ def generate_a_image(_code,
                      info_fonts,
                      custom_fonts,
                      opts):
+    print(_code)
     (
         bar_height,
         margin_top,
