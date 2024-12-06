@@ -332,7 +332,6 @@ def generate_a_image(_code,
                      info_fonts,
                      custom_fonts,
                      opts):
-    print(_code)
     (
         bar_height,
         margin_top,
