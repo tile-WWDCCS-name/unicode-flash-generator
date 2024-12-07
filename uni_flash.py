@@ -78,7 +78,7 @@ FONTS = {
     for k, v in FONTS.items()
 }
 
-VERSION_RANGES = [
+VERSION_RANGES = sorted([
     ((0xE000, 0xF8FF), '6.0.0 or earlier'),
     ((0xF0000, 0xFFFFD), '6.0.0 or earlier'),
     ((0x100000, 0x10FFFD), '6.0.0 or earlier'),
@@ -108,7 +108,7 @@ VERSION_RANGES = [
     ((0x2B739, 0x2B739), '15.0.0'),
     ((0x31350, 0x323AF), '15.0.0'),
     ((0x2EBF0, 0x2EE5D), '15.1.0')
-]
+], key=lambda item: item[0][0])
 
 VERSION_RANGE_START = [i[0][0] for i in VERSION_RANGES]
 VERSION_RANGE_END = [i[0][1] for i in VERSION_RANGES]
