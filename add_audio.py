@@ -1,7 +1,6 @@
 import subprocess
 import os
 
-
 def add_music_to_video(video_path, audio_path, output_path):
     command = [
         'ffmpeg',

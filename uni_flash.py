@@ -474,7 +474,7 @@ def generate_a_image(_code,
     comment = auto_width('说明：' + comment, top_font, percent_left - 15) if comment else ''
     cross_ref = auto_width('交叉参考：' + cross_ref, top_font, percent_left - 15) if cross_ref else ''
     variation = auto_width('变体：' + variation, top_font, percent_left - 15) if variation else ''
-    decomposition = auto_width('拆解' + decomposition, top_font, percent_left - 15) if decomposition else ''
+    decomposition = auto_width('拆解：' + decomposition, top_font, percent_left - 15) if decomposition else ''
     compat_mapping = auto_width('兼容性映射：' + compat_mapping, top_font, percent_left - 15) if compat_mapping else ''
     t_text = '\n'.join(filter(bool, [
         compat_mapping,
@@ -649,7 +649,7 @@ if __name__ == '__main__':
     cannot_display_default_font_path = os.path.join(CUR_FOLDER, 'Sarasa-Mono-SC-Regular.ttf')
     percent_font_path = os.path.join(CUR_FOLDER, 'Sarasa-Mono-SC-Regular.ttf')
 
-    t_font = ImageFont.truetype(top_font_path, 21)
+    t_font = ImageFont.truetype(top_font_path, 10)
     rm_font = ImageFont.truetype(right_middle_font_path, 25)
     lb_font = ImageFont.truetype(left_bottom_font_path, 25)
     rb_font = ImageFont.truetype(right_bottom_font_path, 40)
