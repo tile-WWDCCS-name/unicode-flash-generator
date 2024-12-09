@@ -50,7 +50,7 @@
 生成从 U+0000 到 U+002F 的 Unicode 快闪视频，帧率为 15fps：
 
 ```bash
-python uni_flash.py 15 -rang 0 2F
+python uni_flash.py 15 -r 0 2F
 ```
 
 > 十六进制不区分大小写。
@@ -78,7 +78,7 @@ python add_audio.py
 使用一个或多个自定义字体：
 
 ```bash
-python uni_flash.py 15 -rang 0 20 -fonts a.ttf b.otf c.ttf
+python uni_flash.py 15 -r 0 20 -fonts a.ttf b.otf c.ttf
 ```
 
 > 只支持ttf或otf格式的非位图字体。
@@ -141,27 +141,27 @@ Unicode 快闪生成器提供了多种高级设置选项，让您能够精细控
 ### 视频参数
 
 - `-wt`, `--width`: 设置视频宽度（默认 1920 像素）。
-  例：`python uni_flash.py 15 -rang 0 100 -wt 1280`
+  例：`python uni_flash.py 15 -r 0 100 -wt 1280`
 
 - `-ht`, `--height`: 设置视频高度（默认 1080 像素）。
-  例：`python uni_flash.py 15 -rang 0 100 -ht 720`
+  例：`python uni_flash.py 15 -r 0 100 -ht 720`
 
 - `-bh`, `--bar_height`: 设置顶部进度条高度（默认 36 像素）。
-  例：`python uni_flash.py 15 -rang 0 100 -bh 50`
+  例：`python uni_flash.py 15 -r 0 100 -bh 50`
 
 - `-mt`, `-mb`, `-ml`, `-mr`(`--margin_top`, `--margin_bottom`, `--margin_left`, `--margin_right`): 设置视频的上、下、左、右边距（上、下边距默认 15 像素， 左、右边距默认 30 像素。边距可以为负，但不推荐）。
-  例：`python uni_flash.py 15 -rang 0 100 -mr 100 -mb 150 -ml -5 -mt 1`
+  例：`python uni_flash.py 15 -r 0 100 -mr 100 -mb 150 -ml -5 -mt 1`
 
 ### 字符选择和过滤
 
 - `-sng`, `--skip_no_glyph`: 跳过在所有自定义字体中都没有字形的字符。这一般用于生成某字体的快闪视频。
-  例：`python uni_flash.py 15 -rang 0 1000 -fonts custom.ttf -sng`
+  例：`python uni_flash.py 15 -r 0 1000 -fonts custom.ttf -sng`
 
 - `-sl`, `--skip_long`: 跳过在`U+323B0~U+DFFFF` 范围内的字符。这个范围中均为未定义字符，跳过它们可以显著减少生成（全Unicode快闪的）时间。
-  例：`python uni_flash.py 15 -rang 0 FFFFF -sl`
+  例：`python uni_flash.py 15 -r 0 FFFFF -sl`
 
 - `-su`, `--skip_undefined`: 跳过未定义字符、非字符和代理字符等。这可以确保只显示有效的 Unicode 字符。
-  例：`python uni_flash.py 15 -rang 0 FFFFF -su`
+  例：`python uni_flash.py 15 -r 0 FFFFF -su`
 
 - `-shu`, `--show_undefined`: 展示在自定义字体中有字形的未定义字符、非字符、代理字符等。这个选项可以用来检查字体中的特殊字符。
   例：`python uni_flash.py 15 -ff -fonts custom.ttf -shu`
@@ -169,10 +169,10 @@ Unicode 快闪生成器提供了多种高级设置选项，让您能够精细控
 ### 字体选择
 
 - `-um`, `--use_mlst`: 使用 MonuLast (典迹末境) 字体作为最后的备选字体。
-  例：`python uni_flash.py 15 -rang 0 1000 -um`
+  例：`python uni_flash.py 15 -r 0 1000 -um`
 
 - `-ul`, `--use_last`: 使用 LastResort (最后手段) 字体作为最后的备选字体。
-  例：`python uni_flash.py 15 -rang 0 1000 -ul`
+  例：`python uni_flash.py 15 -r 0 1000 -ul`
 
 ### 私用区字符
 
@@ -184,7 +184,7 @@ Unicode 快闪生成器提供了多种高级设置选项，让您能够精细控
 您可以组合多个高级设置选项来精确控制视频生成过程。例如：
 
 ```
-python uni_flash.py 15 -rang 0 FFFF -wt 1280 -ht 720 -bh 40 -fonts custom1.ttf custom2.ttf -sng -sl
+python uni_flash.py 15 -r 0 FFFF -wt 1280 -ht 720 -bh 40 -fonts custom1.ttf custom2.ttf -sng -sl
 ```
 
 这个命令将生成一个 1280x720 分辨率的视频，进度条高度为40像素，使用两个自定义字体，跳过没有在所有自定义字体中都没有字形的字符和在`U+323B0~U+DFFFF`范围内的字符。
