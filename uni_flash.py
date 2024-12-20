@@ -427,7 +427,7 @@ def generate_a_image(_code,
     mb_text_left, _ , mb_text_right, _ = draw.textbbox((w / 2, h - 15), mb_text, font=middle_bottom_font, anchor='md', align='center')
     draw.text((w / 2, h - margin_bottom), mb_text, fill=textc, font=middle_bottom_font, anchor='md', align='center')
 
-    fn = auto_width('字体：' + font_name, rb_font, w - mb_text_right - 15)
+    fn = auto_width('字体：' + font_name, right_bottom_font, w - mb_text_right - 15)
     rb_text = '\n'.join([fn, code])
     draw.text((w - 15, h - margin_bottom), rb_text, font=right_bottom_font, fill=textc, anchor='rd', align='right')
 
