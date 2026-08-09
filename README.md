@@ -42,8 +42,35 @@
 
 3. 克隆此仓库：
    ```bash
-   git clone https://github.com/tile-WWDCCS-name/unicode-flash-generator
+   # 1. 确保已安装 Git LFS（如未安装会自动安装）
+   if ! command -v git-lfs &> /dev/null; then
+       echo "正在安装 Git LFS..."
+       # Termux
+       if [ -d /data/data/com.termux ]; then
+           pkg install -y git-lfs
+       # macOS
+       elif [[ "$OSTYPE" == "darwin"* ]] && command -v brew &> /dev/null; then
+           brew install git-lfs
+       # Linux (Debian/Ubuntu)
+       elif command -v apt-get &> /dev/null; then
+           curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+           sudo apt-get install -y git-lfs
+       # Windows (需要提前安装 choco)
+       elif command -v choco &> /dev/null; then
+           choco install git-lfs -y
+       else
+           echo "请手动安装 Git LFS: https://git-lfs.com"
+           exit 1
+       fi
+       git lfs install
+   fi
+
+   # 2. 克隆仓库
+   git clone https://github.com/1-PT-AxH-RV-0/unicode-flash-generator
    cd unicode-flash-generator
+
+   # 3. 确保 LFS 文件下载完整
+   git lfs pull
    ```
 
 ## 使用方法
