@@ -36,7 +36,8 @@
    若您在安装opencv-python或numpy时遇到错误，请尝试：
 
    ```bash
-   apt install opencv-python python-numpy
+   pkg install x11-repo
+   pkg install opencv-python python-numpy
    ```
 
 3. 克隆此仓库：
