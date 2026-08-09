@@ -36,7 +36,7 @@ def get_char_name(code):
     if 0xD800 <= code <= 0xDFFF:
         return f'SURROGATE-{code:04X}'
     name = NAMES_LIST.get(
-        str(code),
+        code,
         {'name': None}
     )['name']
     
@@ -61,6 +61,18 @@ def is_reserved(code):
         return True
     return False
 
+
+def get_all_cmap_unicodes(font: TTFont) -> Set[int]:
+    all_unicodes = set()
+    
+    if 'cmap' in font:
+        for table in font['cmap'].tables:
+            if table.cmap:
+                all_unicodes.update(table.cmap.keys())
+    
+    return all_unicodes
+
+
 fonts: list[str] = [
     'Ctrl-Ctrl',
     'PlangothicP1-Regular',
@@ -80,8 +92,7 @@ for path in fonts:
         os.path.join(os.path.dirname(CUR_FOLDER), 'fonts', path + '.ttf')
     )
     font: TTFont = TTFont(abs_path)
-    cmap: dict[int, str] = font.getBestCmap()
-    codes = cmap.keys()
+    codes: set[int] = get_all_cmap_unicodes(font)
     need_codes = list(filter(lambda code: code not in already_can_display_codes and (code in DEFINED_CHARACTER_LIST or is_control(code) or is_reserved(code)), codes))
     already_can_display_codes |= set(need_codes)
     res[path] = list(need_codes)

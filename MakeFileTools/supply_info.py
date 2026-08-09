@@ -46,7 +46,7 @@ for event, elem in context:
         if cp is not None:
             cp_int = int(cp, 16)
             versions['single'][cp_int] = elem.get('age')
-            if str(cp_int) not in names_list:
+            if cp_int not in names_list:
                 character = {
                     'code': f'U+{cp}',
                     'name': elem.get('na').replace('#', cp),
@@ -60,7 +60,7 @@ for event, elem in context:
                 }
                 names_list[cp_int] = character
             else:
-                character = names_list[str(cp_int)]
+                character = names_list[cp_int]
                 
             for name_alias in name_aliases:
                 alias_type = name_alias.get('type')

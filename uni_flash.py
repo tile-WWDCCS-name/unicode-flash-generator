@@ -285,7 +285,8 @@ def generate_an_image(_code,
                      img_properties,
                      info_fonts,
                      custom_fonts,
-                     opts):
+                     opts,
+                     last_font_info):
     (
         bar_height,
         margin_top,
@@ -318,6 +319,7 @@ def generate_an_image(_code,
         info_fonts['percent']
     )
     last_type, show_private, show_undefined, show_control, show_reserved = opts['last_type'], opts['show_private'], opts['show_undefined'], opts['show_control'], opts['show_reserved']
+    font_mlst, font_name_mlst, font_last, font_name_last = last_font_info['font_mlst'], last_font_info['font_name_mlst'], last_font_info['font_last'], last_font_info['font_name_last']
 
     text = get_char(_code)
     utf8 = 'UTF-8: ' + gap(to_utf8_hex(_code))
@@ -490,7 +492,8 @@ def generate_unicode_flash(codes,
                            video_properties,
                            info_fonts,
                            custom_font_paths,
-                           opts):
+                           opts,
+                           last_font_info):
     groups = [
         (
             (*get_block_infos(k)[:-1], ),
@@ -537,7 +540,8 @@ def generate_unicode_flash(codes,
             img_props,
             info_fonts,
             custom_fonts,
-            opts
+            opts,
+            last_font_info
         ))
 
     # 用多进程池并行生成帧
@@ -558,7 +562,7 @@ def _worker_generate_frame(args):
       (code_index, code, groups, group_lens, dimensions, img_props, info_fonts, custom_fonts, opts)
     返回 (code_index, bgr_frame)
     """
-    code_index, code, groups, group_lens, dimensions, img_props, info_fonts, custom_fonts, opts = args
+    code_index, code, groups, group_lens, dimensions, img_props, info_fonts, custom_fonts, opts, last_font_info = args
 
     # 复用已有逻辑：构造传给 generate_an_image 的 group dict
     group_dict = {
@@ -574,7 +578,8 @@ def _worker_generate_frame(args):
         img_props,
         info_fonts,
         custom_fonts,
-        opts
+        opts,
+        last_font_info
     )
     # 转为 OpenCV BGR
     bgr = cv2.cvtColor(np.array(pil_img), cv2.COLOR_GRAY2BGR)
@@ -721,32 +726,38 @@ if __name__ == '__main__':
         codes,
         args.out_path,
         {
-           'bar_height': args.bar_height,
-           'margin_top': args.margin_top,
-           'margin_bottom': args.margin_bottom,
-           'margin_left': args.margin_left,
-           'margin_right': args.margin_right,
+            'bar_height': args.bar_height,
+            'margin_top': args.margin_top,
+            'margin_bottom': args.margin_bottom,
+            'margin_left': args.margin_left,
+            'margin_right': args.margin_right,
         },
         {
-           'width': args.width,
-           'height': args.height,
-           'fps': args.fps
+            'width': args.width,
+            'height': args.height,
+            'fps': args.fps
         },
         {
-          'top': t_font,
-          'right_middle': rm_font,
-          'left_bottom': lb_font,
-          'middle_bottom': mb_font,
-          'right_bottom': rb_font,
-          'cannot_display_default': cdd_font,
-          'percent': p_font
+            'top': t_font,
+            'right_middle': rm_font,
+            'left_bottom': lb_font,
+            'middle_bottom': mb_font,
+            'right_bottom': rb_font,
+            'cannot_display_default': cdd_font,
+            'percent': p_font
         },
         args.fonts,
         {
-           'last_type': 1 if args.use_last else 2 if args.use_mlst else 0,
-           'show_private': args.show_private,
-           'show_undefined': args.show_undefined,
-           'show_control': args.show_control,
-           'show_reserved': args.show_reserved
+            'last_type': 1 if args.use_last else 2 if args.use_mlst else 0,
+            'show_private': args.show_private,
+            'show_undefined': args.show_undefined,
+            'show_control': args.show_control,
+            'show_reserved': args.show_reserved
+        },
+        {
+            'font_mlst': font_mlst,
+            'font_name_mlst': font_name_mlst,
+            'font_last': font_last,
+            'font_name_last': font_name_last
         }
     )
