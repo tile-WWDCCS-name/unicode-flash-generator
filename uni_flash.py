@@ -105,7 +105,7 @@ def get_char_name(code):
     if 0xD800 <= code <= 0xDFFF:
         return f'SURROGATE-{code:04X}'
     name = NAMES_LIST.get(
-        str(code),
+        code,
         {'name': None}
     )['name']
     
