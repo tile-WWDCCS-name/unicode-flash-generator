@@ -405,34 +405,34 @@ def generate_an_image(_code,
     draw.text((w - margin_right, bar_height + margin_top), percent, font=percent_font, fill=textc, anchor='rt')
 
     alias = ', '.join(NAMES_LIST.get(
-        str(_code),
+        _code,
         {'alias': []})['alias']
     )
     formal_alias = ', '.join(NAMES_LIST.get(
-        str(_code),
+        _code,
         {'formal alias': []})['formal alias']
     )
     comment = '; '.join(NAMES_LIST.get(
-        str(_code),
+        _code,
         {'comment': []})['comment']
     )
     cross_ref = ', '.join(NAMES_LIST.get(
-        str(_code),
+        _code,
         {'cross references': []})['cross references']
     )
     variation = ', '.join(NAMES_LIST.get(
-        str(_code),
+        _code,
         {'variation': []})['variation']
     )
     decomposition = ' '.join(map(
         lambda c: 'U+' + c,
         NAMES_LIST.get(
-            str(_code),
+            _code,
             {'decomposition': []})['decomposition']
         )
     )
     compat_mapping = ', '.join(NAMES_LIST.get(
-        str(_code),
+        _code,
         {'compat mapping': []})['compat mapping']
     )
     version = '版本：' + get_char_version(_code)
