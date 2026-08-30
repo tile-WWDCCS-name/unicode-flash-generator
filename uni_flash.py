@@ -547,10 +547,8 @@ def generate_unicode_flash(codes,
     # 用多进程池并行生成帧
     cpu_cnt = os.cpu_count() or 4
     with ProcessPoolExecutor(max_workers=cpu_cnt) as exe:
-        # map 会按 tasks 顺序返回结果，chunksize 设小一些也可
-        # exe.map 返回一个 (code_index, bgr_frame) 的迭代器
-        it = exe.map(_worker_generate_frame, tasks, chunksize=8)
-        for code_index, bgr_frame in tqdm(it, total=len(tasks)):
+        it = exe.map(_worker_generate_frame, tasks, chunksize=12)
+        for bgr_frame in tqdm(it, total=len(tasks)):
             video_writer.write(bgr_frame)
 
     video_writer.release()
@@ -560,11 +558,10 @@ def _worker_generate_frame(args):
     """
     args 是一个 tuple:
       (code_index, code, groups, group_lens, dimensions, img_props, info_fonts, custom_fonts, opts)
-    返回 (code_index, bgr_frame)
+    返回 bgr_frame
     """
     code_index, code, groups, group_lens, dimensions, img_props, info_fonts, custom_fonts, opts, last_font_info = args
 
-    # 复用已有逻辑：构造传给 generate_an_image 的 group dict
     group_dict = {
         'groups': groups,
         'group_lens': group_lens,
@@ -581,9 +578,8 @@ def _worker_generate_frame(args):
         opts,
         last_font_info
     )
-    # 转为 OpenCV BGR
     bgr = cv2.cvtColor(np.array(pil_img), cv2.COLOR_GRAY2BGR)
-    return code_index, bgr
+    return bgr
 
 
 if __name__ == '__main__':
